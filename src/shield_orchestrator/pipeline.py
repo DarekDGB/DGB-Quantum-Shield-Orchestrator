@@ -1,97 +1,85 @@
 from __future__ import annotations
 
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 from typing import Any, Dict, List
 
 from .config import ShieldConfig
 from .context import ShieldContext
-from .bridges.base_layer import ShieldEvent, LayerResult, ShieldLayer
-from .bridges.sentinel_bridge import SentinelBridge
-from .bridges.dqsn_bridge import DQSNBridge
-from .bridges.adn_bridge import ADNBridge
-from .bridges.guardian_wallet_bridge import GuardianWalletBridge
-from .bridges.qwg_bridge import QWGBridge
-from .bridges.adaptive_core_bridge import AdaptiveCoreBridge
+from .bridges.base_layer import LayerResult
+from .bridges.sentinel_bridge import SentinelLayer
+from .bridges.dqsn_bridge import DQSNLayer
+from .bridges.adn_bridge import ADNLayer
+from .bridges.guardian_wallet_bridge import GuardianWalletLayer
+from .bridges.qwg_bridge import QWGLayer
+from .bridges.adaptive_core_bridge import AdaptiveCoreLayer
 
 
 @dataclass
-class ShieldOutcome:
-    """Final combined result from the full shield pipeline."""
-
-    context: ShieldContext
-    trace: List[LayerResult]
-    final_risk_level: str
-    max_severity: float
+class ShieldResult:
+    """Final aggregate result from the full shield pipeline."""
+    final_score: float
+    final_level: str
+    layer_results: List[LayerResult]
+    logs: List[str]
 
 
 class FullShieldPipeline:
     """
-    Run an event through all six layers and aggregate risk.
+    Minimal but real 6-layer orchestration.
 
-    This orchestrator uses simple, deterministic logic so it can be
-    safely executed in tests and on DigiByte testnet later.
+    This does not import the separate layer repos – it models their behaviour
+    with deterministic scoring so CI can run fully in this repository.
     """
 
-    def __init__(self, config: ShieldConfig, layers: List[ShieldLayer]) -> None:
-        self.config = config
-        self.layers = layers
+    def __init__(self, config: ShieldConfig | None = None) -> None:
+        self.config = config or ShieldConfig()
+        self.context = ShieldContext(config={"weights": self.config.__dict__})
+
+        # Instantiate the 5 “front” layers.
+        self.sentinel = SentinelLayer(weight=self.config.sentinel_weight)
+        self.dqsn = DQSNLayer(weight=self.config.dqsn_weight)
+        self.adn = ADNLayer(weight=self.config.adn_weight)
+        self.guardian = GuardianWalletLayer(weight=self.config.guardian_weight)
+        self.qwg = QWGLayer(weight=self.config.qwg_weight)
+        self.adaptive_core = AdaptiveCoreLayer(weight=self.config.adaptive_weight)
 
     @classmethod
     def from_default_config(cls) -> "FullShieldPipeline":
-        cfg = ShieldConfig.default()
-        layers: List[ShieldLayer] = []
+        return cls()
 
-        if cfg.enable_sentinel:
-            layers.append(SentinelBridge())
-        if cfg.enable_dqsn:
-            layers.append(DQSNBridge())
-        if cfg.enable_adn:
-            layers.append(ADNBridge())
-        if cfg.enable_guardian_wallet:
-            layers.append(GuardianWalletBridge())
-        if cfg.enable_qwg:
-            layers.append(QWGBridge())
-        if cfg.enable_adaptive_core:
-            layers.append(AdaptiveCoreBridge())
-
-        return cls(config=cfg, layers=layers)
-
-    def process_event(
-        self,
-        payload: Dict[str, Any],
-        *,
-        ctx: ShieldContext | None = None,
-    ) -> ShieldOutcome:
-        """
-        Run a single event through all enabled layers.
-
-        payload – arbitrary dict with fields understood by the bridges.
-        """
-        context = ctx or ShieldContext()
-        event = ShieldEvent(payload=dict(payload))  # shallow copy
-
-        trace: List[LayerResult] = []
-
-        for layer in self.layers:
-            result = layer.process(event, context)
-            trace.append(result)
-
-        max_severity = max((r.severity for r in trace), default=0.0)
-        final_level = self._severity_to_level(max_severity)
-
-        return ShieldOutcome(
-            context=context,
-            trace=trace,
-            final_risk_level=final_level,
-            max_severity=max_severity,
-        )
-
-    @staticmethod
-    def _severity_to_level(severity: float) -> str:
-        if severity > 0.85:
+    def _risk_level(self, score: float) -> str:
+        if score >= 0.80:
             return "CRITICAL"
-        if severity > 0.65:
+        if score >= 0.60:
             return "HIGH"
-        if severity > 0.35:
+        if score >= 0.35:
             return "ELEVATED"
         return "LOW"
+
+    def process_event(self, event: Dict[str, Any]) -> ShieldResult:
+        """
+        Run the event through all 6 layers and return an aggregate view.
+        """
+        results: List[LayerResult] = []
+
+        # 1–5: individual layers
+        for layer in (self.sentinel, self.dqsn, self.adn, self.guardian, self.qwg):
+            res = layer.process(event, self.context)
+            results.append(res)
+
+        # 6: Adaptive Core sees all previous results.
+        adaptive_result = self.adaptive_core.process(event, self.context, results)
+        results.append(adaptive_result)
+
+        # Aggregate
+        final_score = (
+            sum(r.risk_score for r in results) / len(results) if results else 0.0
+        )
+        level = self._risk_level(final_score)
+
+        return ShieldResult(
+            final_score=final_score,
+            final_level=level,
+            layer_results=results,
+            logs=list(self.context.logs),
+        )
