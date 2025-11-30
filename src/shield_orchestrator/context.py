@@ -1,33 +1,20 @@
 from __future__ import annotations
 
 from dataclasses import dataclass, field
-from datetime import datetime, timezone
-from typing import Any, Dict
-import uuid
+from typing import Any, Dict, List
 
 
 @dataclass
 class ShieldContext:
     """
-    Shared runtime context for one Quantum Immune Shield evaluation.
-
-    Keeps:
-    - request_id for tracing
-    - created_at timestamp
-    - arbitrary metadata (e.g. testnet, node id, wallet id)
+    Shared runtime context for the full shield pipeline.
+    Keeps simple config, network label and a log buffer.
     """
 
-    request_id: str = field(default_factory=lambda: str(uuid.uuid4()))
-    created_at: datetime = field(
-        default_factory=lambda: datetime.now(timezone.utc)
-    )
-    metadata: Dict[str, Any] = field(default_factory=dict)
+    network: str = "dgb-regtest"
+    config: Dict[str, Any] = field(default_factory=dict)
+    logs: List[str] = field(default_factory=list)
 
-    def with_metadata(self, **extra: Any) -> "ShieldContext":
-        """Return a shallow copy with additional metadata merged in."""
-        merged = {**self.metadata, **extra}
-        return ShieldContext(
-            request_id=self.request_id,
-            created_at=self.created_at,
-            metadata=merged,
-        )
+    def log(self, message: str) -> None:
+        """Append a message to the in-memory log buffer."""
+        self.logs.append(message)
