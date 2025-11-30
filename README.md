@@ -1,173 +1,203 @@
-# 🛡 DigiByte Quantum Immune Shield — v2
-
+# 🛡 DigiByte Quantum Immune Shield — v2  
 Author: **DarekDGB**  
 AI Engineering Assistant: **Angel**  
 License: **MIT**
 
 ---
 
-## 1. Intent
+## 1. Purpose
 
-The **DigiByte Quantum Immune Shield** is the *unified, 6‑layer defense stack* for DigiByte:
+The **DigiByte Quantum Immune Shield v2** is a **unified, adaptive, multi‑layer security framework** engineered to help DigiByte Core developers strengthen the blockchain against modern & future attack classes:
 
-1. **Sentinel AI v2** – external monitoring & anomaly detection  
-2. **DQSN v2** – DigiByte Quantum Shield Network (global confirmation layer)  
-3. **ADN v2** – Autonomous Defense Node (reflex & lockdown engine)  
-4. **Guardian Wallet v2** – wallet & user‑side protection  
-5. **Quantum Wallet Guard v2 (QWG)** – quantum‑style wallet risk scoring  
-6. **Adaptive Core v2** – the immune system that learns from every attack  
+- coordinated multi‑vector attacks  
+- quantum‑accelerated key‑abuse  
+- wallet‑level takeover attempts  
+- long‑horizon behavioural threats  
+- node‑targeting instability attacks  
+- pattern‑driven exploit evolution  
 
-This repository is the **top‑level bundle & orchestration layer** that ties all six together into one architecture that can be tested and later wired into DigiByte testnet.
+This repository contains the **architecture**, the **orchestration engine**, the **inter‑layer bridges**, **full system docs**, and a **test harness**, providing DigiByte developers with a clean, expandable foundation.
+
+This repo does *not* modify DigiByte consensus.  
+It provides the **blueprint + orchestration layer** that DigiByte Core devs can extend with real node/wallet RPC integration.
 
 ---
 
-## 2. High‑Level Architecture
+## 2. Architecture Overview — All 6 Layers
 
-Data and risk signals flow through the shield like this:
+### **1. Sentinel AI v2 — External Monitoring Layer**
+Observes mempool drift, entropy drops, reorg surfaces, timestamp anomalies, and external risk signals.
 
-```text
-[Sentinel AI v2]
-        ↓  (signals: entropy, reorgs, anomalies)
-[DQSN v2]
-        ↓  (global confirmation, cluster scoring)
-[ADN v2]
-        ↓  (lockdown, rate‑limits, safe‑mode events)
-[Guardian Wallet v2] ←→ [QWG v2]
-        ↓  (wallet behaviour + quantum‑style risk)
-[Adaptive Core v2]
-        ↓
- Network Immune Response (NIR) → back to all layers
+### **2. DQSN v2 — DigiByte Quantum Shield Network**
+Global confirmation, cluster scoring, and network‑sourced behaviour context.
+
+### **3. ADN v2 — Autonomous Defense Node**
+Node‑level reflex layer performing lockdown, throttle, and defensive reactions.
+
+### **4. Guardian Wallet v2**
+Wallet‑level behavioural monitoring, suspicious flow analysis, access‑pattern deviation detection.
+
+### **5. Quantum Wallet Guard v2 (QWG)**
+Quantum‑signature / deterministic‑pattern monitoring for wallet & user security.
+
+### **6. Adaptive Core v2 — Immune System**
+The self‑learning memory layer:
+- stores threat packets  
+- learns repeated patterns  
+- evolves signatures  
+- returns immune response packets  
+- strengthens after each attack  
+
+---
+
+## 3. Repository Structure
+
+```
+/docs
+    Shield_Architecture_v2.md
+    Shield_Orchestrator_Design_v2.md
+    Shield_Testnet_Bundle_Guide_v2.md
+    CONTRIBUTING.md
+    SECURITY_MODEL_v2.md
+    FAQ.md
+    Layer_Interfaces_v2.md
+
+/src/shield_orchestrator
+    /bridges
+        adaptive_core_bridge.py
+        adn_bridge.py
+        base_layer.py
+        dqsn_bridge.py
+        guardian_wallet_bridge.py
+        qwg_bridge.py
+        sentinel_bridge.py
+
+    config.py
+    context.py
+    pipeline.py
+
+/tests
+    test_full_pipeline_basic.py
 ```
 
-The Adaptive Core creates a feedback loop:  
-**Detect → Confirm → Defend → Protect → Learn → Reinforce → Detect Stronger.**
+This provides a clean, fully documented environment for DigiByte Core devs to integrate real APIs, RPC calls, and production‑quality logic.
 
 ---
 
-## 3. Related Repositories (Layers)
+## 4. Shield Orchestrator — Core Concepts
 
-This bundle assumes the six layer repos already exist:
+### **FullShieldPipeline**
+A step‑based engine that:
 
-- `Sentinel-AI-v2`  
-- `DigiByte-DQSN-v2`  
-- `DigiByte-ADN-v2`  
-- `DGB-wallet-Guardian`  
-- `DGB-Quantum-Wallet-Guard`  
-- `DigiByte-Adaptive-Core`  
+1. loads configuration  
+2. instantiates all bridges  
+3. passes a unified `ShieldContext`  
+4. runs each layer sequentially  
+5. aggregates outputs  
+6. forwards them to the Adaptive Core  
+7. returns a full ShieldResponse  
 
-Each of those repositories already contains:
+### **Bridges**
+Each bridge exposes:
 
-- real Python code (no placeholders)  
-- tests with CI green  
-- whitepaper / tech spec / developer docs  
+- `collect()`  
+- `evaluate()`  
+- `build_packet()`  
 
-This bundle **does not copy their code** – it orchestrates them.
+These functions allow DigiByte devs to connect real data sources (mempool, node RPC, wallet API, DQSN nodes, etc.).
 
----
+### **ShieldContext**
+Shared context passed into each layer to maintain:
 
-## 4. Scope of This Repository
-
-This repo will provide:
-
-1. **Orchestrator module**
-
-   `src/shield_orchestrator/` (planned layout):
-
-   - `__init__.py`  
-   - `config.py` – central config for all layers  
-   - `context.py` – shared runtime context (logging, network, testnet flags)  
-   - `pipeline.py` – defines the full 6‑layer processing pipeline  
-   - `bridges/`  
-     - `sentinel_bridge.py`  
-     - `dqsn_bridge.py`  
-     - `adn_bridge.py`  
-     - `guardian_wallet_bridge.py`  
-     - `qwg_bridge.py`  
-     - `adaptive_core_bridge.py`  
-
-2. **End‑to‑end scenarios**
-
-   `examples/` (planned):
-
-   - `full_shield_scenario_basic.py` – normal traffic + mild anomalies  
-   - `full_shield_scenario_attack.py` – multi‑layer quantum‑style attack  
-   - `full_shield_scenario_recovery.py` – how the shield heals & learns  
-
-3. **Bundle‑level tests**
-
-   `tests/` (planned):
-
-   - `test_full_pipeline_ok.py`  
-   - `test_full_pipeline_attack.py`  
-   - `test_adaptive_feedback_loop.py`  
-
-4. **Documentation**
-
-   `docs/` (planned):
-
-   - `Shield_Architecture_v2.md`  
-   - `Shield_Testnet_Bundle_Plan.md`  
-   - `Shield_Orchestrator_Design.md`  
+- network state  
+- timestamps  
+- aggregated risk  
+- packet logs  
+- memory from previous cycles  
 
 ---
 
-## 5. How Layers Connect (Conceptual)
+## 5. Adaptive Core v2 — Deep Learning Immune System
 
-- Sentinel AI sends **SignalPackets** into the orchestrator.  
-- DQSN converts local risk into **NetworkRiskPackets**.  
-- ADN reacts with **DefenseEvents** (lockdown / throttling).  
-- Guardian Wallet + QWG provide **WalletRiskPackets** and **QuantumRiskScores**.  
-- Adaptive Core consumes everything as **ThreatPackets**, updates memory,  
-  and returns a **Network Immune Response (NIR)**.
+The Adaptive Core receives every layer’s packet and produces:
 
-The orchestrator is responsible for:
+- **Network Immune Score (NIS)**  
+- **Immune Severity Level (ISL)**  
+- **Threat Memory updates**  
+- **Pattern evolution results**  
 
-- routing packets between layers in the correct order  
-- preserving timestamps and metadata  
-- collecting final risk summaries  
-- exposing a simple Python API for testnet simulations  
+Code stubs are ready for DigiByte devs to expand with real ML/PQC logic.
 
 ---
 
-## 6. Status
+## 6. Testing Layer
 
-- All 6 underlying layers are **v2‑complete with CI green**.  
-- This repo currently defines the **bundle intent and layout**.  
-- Next steps (to be implemented here):
+The repository includes:
 
-  1. Add `src/shield_orchestrator/` with real orchestration code.  
-  2. Add `examples/` end‑to‑end scripts.  
-  3. Add bundle‑level tests and CI workflow.  
+### **test_full_pipeline_basic.py**
+A minimal test validating:
 
----
+- pipeline initialization  
+- layer ordering  
+- baseline packet flow  
+- bridge execution  
+- adaptive core integration  
 
-## 7. Usage (planned)
-
-Once the orchestrator module is in place:
-
-```python
-from shield_orchestrator.pipeline import FullShieldPipeline
-
-shield = FullShieldPipeline.from_default_config()
-
-result = shield.process_event({
-    "type": "wallet_withdrawal",
-    "amount_dgb": 250000,
-    "address": "DGB...",
-    "entropy_drop": 0.14,
-})
-
-print(result.final_risk_level)
-print(result.immune_response.level)
-```
-
-This will run the event through **all six layers** and return a combined view.
+All tests run automatically via GitHub CI.
 
 ---
 
-## 8. License
+## 7. Developer Documentation
 
-MIT – open for DigiByte and any UTXO chain that wants to study or adapt the concept.
+The following documents are provided:
+
+- **Architecture v2** — full blueprint  
+- **Orchestrator Design v2** — internals of bridges/pipeline  
+- **Testnet Bundle Guide v2** — instructions for DigiByte devs  
+- **Security Model v2** — assumptions + boundaries  
+- **Layer Interfaces v2** — function‑level layer interface design  
+- **FAQ** — explanations for community/devs  
+- **Contributing** — how devs can extend the system  
+
+Together, they form a complete integration manual for DigiByte developers.
 
 ---
+
+## 8. Integration Path for DigiByte Core Devs
+
+DigiByte devs can:
+
+1. Connect real Sentinel feeds → sentinel_bridge.py  
+2. Bind DQSN cluster data → dqsn_bridge.py  
+3. Integrate node RPC (getmempoolinfo / getrawmempool / getblock) → adn_bridge.py  
+4. Connect wallet RPC (listunspent / getaddressinfo) → guardian_wallet_bridge.py  
+5. Insert PQC/deterministic signature logic → qwg_bridge.py  
+6. Expand Adaptive Core with real ML, scoring, and PQ algorithms  
+
+This repo provides the full scaffold with clean extension points.
+
+---
+
+## 9. Status
+
+All 6 layers (v2) implemented structurally.  
+Adaptive Core v2 integrated.  
+FullShieldPipeline operational.  
+Docs complete.  
+CI operational.  
+
+Repo is now ready for **DigiByte testnet integration** and deeper development by DigiByte Core engineers.
+
+---
+
+## 10. License
+
+MIT — Open‑source, open to DigiByte and any UTXO chain.
+
+---
+
+## 11. Author
+
+**DarekDGB** — Vision, architecture, repository creation.  
+**Angel** — Engineering support and system design assistance.
 
