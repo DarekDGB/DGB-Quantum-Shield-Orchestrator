@@ -1,20 +1,19 @@
+# src/shield_orchestrator/context.py
+
 from __future__ import annotations
 
 from dataclasses import dataclass, field
-from typing import Any, Dict, List
+from typing import Any, Dict
+import uuid
 
 
 @dataclass
 class ShieldContext:
-    """
-    Shared runtime context for the full shield pipeline.
-    Keeps simple config, network label and a log buffer.
-    """
+    """Simple shared context for a full-shield run."""
 
-    network: str = "dgb-regtest"
-    config: Dict[str, Any] = field(default_factory=dict)
-    logs: List[str] = field(default_factory=list)
+    run_id: str
+    metadata: Dict[str, Any] = field(default_factory=dict)
 
-    def log(self, message: str) -> None:
-        """Append a message to the in-memory log buffer."""
-        self.logs.append(message)
+    @classmethod
+    def default(cls) -> "ShieldContext":
+        return cls(run_id=str(uuid.uuid4()))
