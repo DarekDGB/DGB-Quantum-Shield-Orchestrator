@@ -3,27 +3,18 @@ from __future__ import annotations
 from dataclasses import dataclass
 
 
-@dataclass(frozen=True)
+@dataclass
 class ShieldConfig:
     """
-    High-level configuration for the Quantum Immune Shield orchestrator.
+    High-level weight configuration for the 6 layers.
 
-    For now this is simple and local. In the future it can hold:
-    - RPC endpoints
-    - node / wallet connection info
-    - feature flags per layer
+    These weights are used to compute the final aggregate risk score.
+    They do NOT have to be perfect – they just keep the demo deterministic.
     """
 
-    enable_sentinel: bool = True
-    enable_dqsn: bool = True
-    enable_adn: bool = True
-    enable_guardian_wallet: bool = True
-    enable_qwg: bool = True
-    enable_adaptive_core: bool = True
-
-    version: str = "v2"
-
-    @classmethod
-    def default(cls) -> "ShieldConfig":
-        """Return the default config used by FullShieldPipeline.from_default_config()."""
-        return cls()
+    sentinel_weight: float = 0.15
+    dqsn_weight: float = 0.20
+    adn_weight: float = 0.20
+    guardian_weight: float = 0.15
+    qwg_weight: float = 0.15
+    adaptive_weight: float = 0.15
