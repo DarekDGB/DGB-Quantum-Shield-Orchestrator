@@ -1,40 +1,42 @@
 from __future__ import annotations
 
-from typing import Any, Dict
+from typing import Any, Dict, List
 
-from .base_layer import ShieldLayer, ShieldEvent, LayerResult
+from .base_layer import BaseLayer, LayerResult
 from ..context import ShieldContext
 
 
-class AdaptiveCoreBridge(ShieldLayer):
+class AdaptiveCoreLayer(BaseLayer):
     """
-    Bridge for Adaptive Core v2.
+    Bridge for the Adaptive Core v2.
 
-    In this bundle we simulate a Network Immune Score (NIS) returned
-    from previous learning cycles.
+    It receives the *previous layer results* and produces a final immune score.
     """
 
-    def __init__(self) -> None:
-        super().__init__(name="adaptive_core_v2")
+    def __init__(self, weight: float = 1.0) -> None:
+        super().__init__("adaptive_core_v2")
+        self.weight = weight
 
-    def process(self, event: ShieldEvent, ctx: ShieldContext) -> LayerResult:
-        p: Dict[str, Any] = event.payload
-        nis = float(p.get("network_immune_score", 0.0))
+    def process(
+        self,
+        event: Dict[str, Any],
+        context: ShieldContext,
+        previous_results: List[LayerResult],
+    ) -> LayerResult:
+        if not previous_results:
+            score = 0.0
+        else:
+            avg_prev = sum(r.risk_score for r in previous_results) / len(previous_results)
+            # Adaptive core amplifies persistent high risk, dampens noise.
+            score = max(0.0, min(1.0, avg_prev * 1.1 * self.weight))
 
-        # Higher NIS means the immune system is *already* suspicious.
-        severity = max(0.0, min(nis, 1.0))
-        level = "LOW"
-        if severity > 0.75:
-            level = "CRITICAL"
-        elif severity > 0.55:
-            level = "HIGH"
-        elif severity > 0.3:
-            level = "ELEVATED"
+        context.log(f"[AdaptiveCore] previous_avg={avg_prev if previous_results else 0.0:.3f}, "
+                    f"immune_score={score:.3f}")
 
         return LayerResult(
-            layer=self.name,
-            severity=severity,
-            level=level,
-            notes="Simulated Adaptive Core network immune score.",
-            metadata={"network_immune_score": nis},
+            name=self.name,
+            risk_score=score,
+            details={
+                "previous_layers": [r.name for r in previous_results],
+            },
         )
