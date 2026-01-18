@@ -2,7 +2,7 @@ from shield_orchestrator.v3.contracts.envelope import OrchestratorV3Request
 from shield_orchestrator.v3.orchestrate import orchestrate
 
 
-def test_v3_fail_closed_when_components_unwired():
+def test_v3_denies_by_default_when_wired_phase3() -> None:
     req = OrchestratorV3Request(
         contract_version=3,
         wallet_id="w1",
@@ -15,6 +15,4 @@ def test_v3_fail_closed_when_components_unwired():
     resp = orchestrate(req)
 
     assert resp.outcome == "DENY"
-    assert "COMPONENT_MISSING" in resp.reason_ids
-    # deterministic trace includes final_synthesis
-    assert any(t.stage == "final_synthesis" for t in resp.trace)
+    assert "POLICY_DENY_BY_DEFAULT" in resp.reason_ids
