@@ -1,119 +1,194 @@
-# Contributing to DGB Quantum Immune Shield Orchestrator
+# Contributing to DGB Quantum Shield Orchestrator
 
-The **DigiByte Quantum Immune Shield Orchestrator** is the coordination layer that
-connects all defensive components:
+The **DigiByte Quantum Shield Orchestrator** is the **v3 coordination layer**
+of the DigiByte Quantum Shield.
 
-- DQSN v2 – network health & entropy
-- Sentinel AI v2 – anomaly detection
-- ADN v2 – tactical defence engine
-- QWG – Quantum Wallet Guard
-- Guardian Wallet – user-facing protection
-- Adaptive Core v2 – learning & fusion engine
+This repository is responsible for:
+- deterministically invoking Shield Contract v3 components
+- enforcing strict evaluation order
+- synthesizing a single, fail-closed security envelope
+- forwarding results to Adaptive Core as a **read-only sink**
 
-This repository does **not** implement the internals of those layers.  
-Instead, it:
+It does **not** implement security logic itself.
 
-- defines **interfaces** between them
-- wires them together via **bridges**
-- runs **pipelines** that move signals, context, and decisions between layers
-- provides a **test harness** for running end-to-end shield flows
+Contributions must preserve this role:
+**orchestration, coordination, and contract enforcement only.**
 
-Contributions must preserve this role: **orchestration only, never consensus or wallet logic.**
+---
+
+## 🧭 Scope of This Repository
+
+This project coordinates the following **external Shield v3 components**:
+
+- Sentinel (v3) — signal emission
+- DQSN (v3) — network aggregation
+- ADN (v3) — defensive state signaling
+- Guardian Wallet (v3) — wallet-level enforcement
+- QWG (v3) — cryptographic / PQC guardrails
+- Adaptive Core (v3) — read-only intelligence & reporting
+
+These components live in **their own repositories**.
+This project only connects them via **explicit, deterministic bridges**.
 
 ---
 
 ## ✅ What Contributions Are Welcome
 
-### ✔️ 1. Bridge & Pipeline Improvements
-- new or improved bridges under `src/shield_orchestrator/bridges/`
-- better error handling or retries between layers
-- richer context propagation between DQSN → Sentinel → ADN → QWG → Guardian → Adaptive Core
-- more robust pipeline logic in `pipeline.py` and `context.py`
+### ✔️ 1. Bridge Improvements
+Improvements to adapters under:
 
-### ✔️ 2. Test Harness & Scenarios
-- additional end-to-end tests in `tests/`
-- new scenarios (e.g. reorg, spam, eclipse, hashpower spikes)
-- fixtures that simulate layer outputs and expected orchestrated behaviour
+```
+src/shield_orchestrator/bridges/
+```
 
-### ✔️ 3. Configuration & Observability
-- safer configuration patterns in `config.py`
-- logging / tracing improvements
-- clearer environment and integration settings
+Examples:
+- clearer v3 contract usage
+- stricter input validation
+- better trace or context propagation
+- safer error handling (always fail-closed)
+
+Bridges must:
+- never make allow / deny decisions
+- never modify global state
+- never escalate authority
+
+---
+
+### ✔️ 2. Orchestration & Contract Logic
+Enhancements to:
+
+```
+src/shield_orchestrator/v3/
+```
+
+Examples:
+- stricter request validation
+- clearer trace semantics
+- improved determinism guarantees
+- additional fail-closed reason mappings
+
+All changes must respect:
+- deny-by-default behavior
+- deterministic execution
+- contract version discipline
+
+---
+
+### ✔️ 3. Testing & Verification
+Improvements to:
+
+```
+tests/
+```
+
+Examples:
+- negative-first tests
+- missing-component scenarios
+- hashing and serialization failures
+- determinism regression tests
+
+Tests are **authoritative**:
+if behavior is not test-covered, it is not considered stable.
+
+---
 
 ### ✔️ 4. Documentation
-- clarifications to docs in `docs/`
-- better diagrams of data flow
-- extended FAQ entries
+Updates to:
+- README.md
+- SECURITY.md
+- docs/ (v3 only)
+
+Docs must describe **what exists today**, not speculative future systems.
+
+Legacy or historical material belongs in `docs/legacy/`.
 
 ---
 
 ## ❌ What Will NOT Be Accepted
 
 ### 🚫 1. Moving Layer Logic Into the Orchestrator
-The orchestrator must **not** re-implement:
+This repository must **never** implement or duplicate:
 
-- Sentinel AI analytics
-- DQSN metric computation
-- ADN defence playbooks
-- QWG behavioural analysis / PQC verification
-- Guardian Wallet UX logic
-- Adaptive Core learning
+- Sentinel analytics
+- DQSN aggregation logic
+- ADN defense logic
+- QWG cryptographic checks
+- Guardian Wallet UX or policy logic
+- Adaptive Core learning or decision-making
 
-Those belong in their own repositories.
-
-### 🚫 2. Consensus or Protocol Changes
-This project must **never**:
-
-- alter DigiByte consensus rules
-- modify block or mempool validation
-- act as a validator or governance layer
-
-It is strictly a **coordination and integration** component.
-
-### 🚫 3. Opaque or Hidden Behaviour
-- no black-box decision engines
-- no unexplained magic routes
-- no hidden configuration that changes security posture without visibility
-
-### 🚫 4. Tight Coupling to a Single Deployment
-The orchestrator should remain generic and reusable, not hard-coded to one environment or operator.
+Those belong to their respective repositories.
 
 ---
 
-## 🧱 Design Principles
+### 🚫 2. Policy or Authority Escalation
+The orchestrator must **not**:
+- introduce implicit allow paths
+- override downstream components
+- auto-upgrade or self-modify behavior
+- make autonomous security decisions
 
-1. **Separation of Concerns**  
-   Each shield layer keeps its own logic. The orchestrator just connects them.
+All outcomes must remain **fail-closed** unless explicitly extended by versioned design.
 
-2. **Explicit Interfaces**  
-   Bridges are well-defined, typed, and documented.
+---
 
-3. **Consensus Neutral**  
-   No consensus changes, ever.
+### 🚫 3. Consensus or Protocol Changes
+This project must **never**:
+- alter DigiByte consensus rules
+- modify block, mempool, or validation logic
+- act as governance or validator software
 
-4. **Deterministic Pipelines**  
-   Given the same inputs, the same orchestration behaviour must result.
+It is strictly **coordination-layer software**.
 
-5. **Observability & Auditability**  
-   All flows should be loggable and understandable.
+---
 
-6. **Extensibility**  
-   New layers or external tools should plug into the orchestration pipeline cleanly.
+### 🚫 4. Non-Deterministic Behavior
+Rejected changes include:
+- time-based logic
+- randomness
+- order-dependent execution
+- hidden configuration toggles
+
+Determinism is a core invariant.
+
+---
+
+## 🧱 Design Principles (Non-Negotiable)
+
+1. **Deny-by-Default**  
+   Any ambiguity or failure results in `DENY`.
+
+2. **Deterministic Execution**  
+   Same input → same output → same hash.
+
+3. **Explicit Contracts**  
+   Interfaces are versioned, documented, and test-locked.
+
+4. **No Hidden Authority**  
+   No backdoors, overrides, or escape hatches.
+
+5. **Separation of Concerns**  
+   Orchestration here, logic elsewhere.
+
+6. **Auditability**  
+   All behavior must be explainable via trace output.
 
 ---
 
 ## 🔄 Pull Request Expectations
 
-A good PR should:
+A good PR must:
+- clearly describe intent and scope
+- reference relevant v3 docs or contracts
+- include tests for any behavioral change
+- preserve folder structure and contracts
+- avoid speculative or future-facing logic
 
-- clearly describe what is being changed and why
-- reference any relevant document under `docs/`
-- include tests for new orchestration paths
-- avoid breaking folder structure without strong justification
-- preserve the orchestrator’s role as **integration glue**, not a logic sink
+The maintainer (**@DarekDGB**) reviews:
+- architectural fit
+- security invariants
+- contract discipline
 
-The architect (@DarekDGB) reviews **direction & architecture fit**.  
-Developers review **implementation details** and CI health.
+CI must be green for review.
 
 ---
 
