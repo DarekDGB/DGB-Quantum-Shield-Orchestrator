@@ -1,15 +1,18 @@
 # DigiByte Quantum Shield Orchestrator (v3)
 
-![CI](https://github.com/DarekDGB/DGB-Quantum-Immune-Shield/actions/workflows/ci.yml/badge.svg)
+![CI](https://github.com/DarekDGB/DGB-Quantum-Shield-Orchestrator/actions/workflows/ci.yml/badge.svg)
 ![Coverage](https://img.shields.io/badge/coverage-%E2%89%A590%25-brightgreen)
-![License](https://img.shields.io/github/license/DarekDGB/DGB-Quantum-Immune-Shield)
+![License](https://img.shields.io/github/license/DarekDGB/DGB-Quantum-Shield-Orchestrator)
 ![Python](https://img.shields.io/badge/python-3.11%2B-blue)
 
 **Shield Contract v3 • Deterministic Orchestration • Fail-Closed Security**
 
-The Orchestrator is the **routing + aggregation layer** that coordinates the DigiByte Quantum Shield’s v3 components (Sentinel AI, DQSN, ADN, QWG, Guardian Wallet) and the **Adaptive Core v3** upgrade oracle.
+The **DigiByte Quantum Shield Orchestrator** is the **v3 coordination layer**
+that deterministically connects all DigiByte Quantum Shield components and
+forwards the final security envelope to **Adaptive Core v3** as a read-only sink.
 
-It produces a **single deterministic v3 envelope** that downstream callers (like Adamantine Wallet OS) can treat as the authoritative shield result.
+It produces a **single deterministic v3 envelope** that downstream callers
+(such as **Adamantine Wallet OS**) can treat as the authoritative shield result.
 
 > Orchestrator v3 coordinates and aggregates.  
 > It does **not** sign, broadcast, hold keys, or mutate state.
@@ -19,27 +22,68 @@ It produces a **single deterministic v3 envelope** that downstream callers (like
 ## Core Properties
 
 - **Contract v3 only** (any other version → fail-closed)
-- **Deterministic & replayable** (same input → same output → same context_hash)
-- **Fail-closed** (no silent defaults, no “best effort”)
+- **Deterministic & replayable** (same input → same output → same `context_hash`)
+- **Fail-closed** (no silent defaults, no best-effort behavior)
 - **Strict canonicalization** (stable JSON → stable hashing)
-- **No hidden authority** (aggregation only, never escalation-by-magic)
-- **Traceable** (component-by-component pipeline trace)
+- **No hidden authority** (aggregation only, never escalation)
+- **Fully traceable** (component-by-component execution trace)
+
+---
+
+## High-Level Architecture
+
+```
+┌─────────────────────┐
+│ Adamantine Wallet OS│
+└─────────┬───────────┘
+          │ OrchestratorV3Request
+          ▼
+┌────────────────────────────────────┐
+│  Quantum Shield Orchestrator (v3)   │
+│  - strict validation                │
+│  - deterministic ordering           │
+│  - deny-by-default synthesis        │
+└─────────┬───────────┬──────────────┘
+          │           │
+          │           │ read-only report
+          │           ▼
+          │   ┌──────────────────┐
+          │   │ Adaptive Core v3 │
+          │   │ (no authority)   │
+          │   └──────────────────┘
+          │
+          ▼
+┌────────────────────────────────────┐
+│ Shield Contract v3 Components       │
+│                                    │
+│  1. Sentinel AI v3                 │
+│  2. DQSN v3                        │
+│  3. ADN v3                         │
+│  4. Guardian Wallet v3             │
+│  5. QWG v3                         │
+└────────────────────────────────────┘
+
+Final output:
+→ OrchestratorV3Response (single deterministic envelope)
+```
 
 ---
 
 ## Role in the DigiByte Quantum Shield
 
 Adamantine Wallet OS  
-→ Orchestrator v3  
+→ **Orchestrator v3**  
 → Sentinel AI v3  
 → DQSN v3  
 → ADN v3  
-→ QWG v3  
 → Guardian Wallet v3  
+→ QWG v3  
 
-Signals return back through the Orchestrator as a single v3 envelope.
+Signals are aggregated and returned through the Orchestrator
+as a **single Shield Contract v3 envelope**.
 
-Adaptive Core v3 receives **read-only reports** from all layers (including Orchestrator) and issues **human-reviewed upgrade recommendations**.
+**Adaptive Core v3** receives reports only.
+It cannot influence outcomes or execution.
 
 ---
 
@@ -49,9 +93,9 @@ A single **v3 response envelope** containing:
 
 - `contract_version = 3`
 - deterministic `context_hash`
-- final `outcome` (allow / escalate / deny)
-- stable `reason_ids` (deny-by-default if uncertain)
-- a **pipeline trace**
+- final `outcome` (`DENY` by default)
+- stable `reason_ids`
+- full deterministic execution trace
 - canonical JSON suitable for audit and replay
 
 ---
@@ -63,13 +107,14 @@ A single **v3 response envelope** containing:
 - modify wallet or node state
 - guess missing fields
 - auto-upgrade layers
-- bypass EQC / WSQK / Guardian / QWG rules
+- bypass Guardian / QWG / WSQK / EQC rules
+- execute consensus or governance logic
 
 ---
 
 ## Documentation (v3)
 
-All authoritative documentation lives under:
+Authoritative documentation lives under:
 
 ```
 docs/v3/
@@ -81,13 +126,13 @@ docs/v3/
 - API.md
 - REASON_IDS.md
 
-Legacy v2 docs are preserved under:
+Legacy material is preserved under:
 
 ```
-docs/legacy/v2/
+docs/legacy/
 ```
 
-If code and docs diverge, **CONTRACT.md + tests win**.
+If documentation and code diverge, **contracts and tests win**.
 
 ---
 
@@ -97,10 +142,10 @@ If code and docs diverge, **CONTRACT.md + tests win**.
 - ≥90% test coverage
 - deterministic tests only
 - negative-first testing
-- no silent fallback paths
+- fail-closed on all errors
 
 ---
 
 ## License
 
-MIT DarekDGB 2025
+MIT License © 2025 **DarekDGB**
