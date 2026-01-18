@@ -15,4 +15,4 @@ def test_v3_denies_by_default_when_wired_phase3() -> None:
     resp = orchestrate(req)
 
     assert resp.outcome == "DENY"
-    assert "POLICY_DENY_BY_DEFAULT" in resp.reason_ids
+    assert "DENY_BY_POLICY" in resp.reason_ids
