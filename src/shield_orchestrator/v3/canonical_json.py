@@ -6,10 +6,17 @@ from typing import Any
 
 def to_canonical_json(obj: Any) -> str:
     """
-    Deterministic JSON serialization for hashing/audit.
+    Deterministic JSON serialization for hashing and audit.
 
-    - sort_keys=True
-    - stable separators (no whitespace)
-    - ensure_ascii=False (UTF-8)
+    Rules:
+    - UTF-8
+    - keys sorted
+    - stable separators (no whitespace variance)
+    - no reliance on insertion order
     """
-    return json.dumps(obj, sort_keys=True, separators=(",", ":"), ensure_ascii=False)
+    return json.dumps(
+        obj,
+        sort_keys=True,
+        separators=(",", ":"),
+        ensure_ascii=False,
+    )
