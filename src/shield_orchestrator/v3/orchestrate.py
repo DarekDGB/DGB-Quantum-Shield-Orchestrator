@@ -2,38 +2,31 @@ from __future__ import annotations
 
 from dataclasses import asdict
 
+from shield_orchestrator.bridges.adaptive_core_bridge import AdaptiveCoreBridge
+from shield_orchestrator.bridges.adn_bridge import ADNBridge
+from shield_orchestrator.bridges.dqsn_bridge import DQSNBridge
+from shield_orchestrator.bridges.guardian_wallet_bridge import GuardianWalletBridge
+from shield_orchestrator.bridges.qwg_bridge import QWGBridge
+from shield_orchestrator.bridges.sentinel_bridge import SentinelBridge
 from shield_orchestrator.errors import TVAError
 
-from .contracts.envelope import (
-    OrchestratorV3Request,
-    OrchestratorV3Response,
-    TraceEntry,
-)
+from .context_hash import compute_context_hash
+from .contracts.envelope import OrchestratorV3Request, OrchestratorV3Response, TraceEntry
 from .contracts.reason_ids import ReasonId
 from .contracts.version import CONTRACT_VERSION
-from .context_hash import compute_context_hash
-
-
-# Fixed pipeline order (contract-locked)
-_COMPONENT_ORDER: tuple[tuple[str, str], ...] = (
-    ("sentinel_ai", "sentinel_ai"),
-    ("dqsn", "dqsn"),
-    ("adn", "adn"),
-    ("qwg", "qwg"),
-    ("guardian_wallet", "guardian_wallet"),
-)
 
 
 def orchestrate(request: OrchestratorV3Request) -> OrchestratorV3Response:
     """
-    Public Orchestrator v3 entrypoint.
+    Orchestrator v3 public entrypoint.
 
-    Phase 2 behavior:
-    - strict request validation (version gate)
-    - deterministic pipeline trace skeleton
-    - fail-closed DENY (components not wired yet)
-
-    Phase 3/4 will replace missing-component markers with real bridge calls.
+    Phase 3 behavior:
+    - strict request validation + contract_version gate
+    - deterministic bridge calls in fixed order:
+        Sentinel -> DQSN -> ADN -> Guardian Wallet -> QWG
+    - deny-by-default outcome synthesis (until real allow/deny logic is integrated)
+    - Adaptive Core is a read-only sink that receives the final v3 envelope
+      and emits a deterministic trace entry (must not affect outcome)
     """
     try:
         _validate_request(request)
@@ -49,53 +42,66 @@ def orchestrate(request: OrchestratorV3Request) -> OrchestratorV3Response:
             )
         )
 
-        # Phase 2: components not wired yet → deterministic missing
-        missing_reason = (ReasonId.COMPONENT_MISSING.value,)
+        # Fixed, deterministic bridge order (no order dependence)
+        trace.append(SentinelBridge().evaluate_v3(request))
+        trace.append(DQSNBridge().evaluate_v3(request))
+        trace.append(ADNBridge().evaluate_v3(request))
+        trace.append(GuardianWalletBridge().evaluate_v3(request))
+        trace.append(QWGBridge().evaluate_v3(request))
 
-        for stage, component in _COMPONENT_ORDER:
-            trace.append(
-                TraceEntry(
-                    stage=stage,
-                    component=component,
-                    status="ERROR",
-                    reason_ids=missing_reason,
-                    notes="phase2_unwired",
-                )
-            )
+        # Phase 3 synthesis:
+        # For now, deny-by-default (no hidden allow paths).
+        outcome = "DENY"
+        reason_ids = (ReasonId.POLICY_DENY_BY_DEFAULT.value,)
 
-        # Final synthesis (deny-by-default)
         trace.append(
             TraceEntry(
                 stage="final_synthesis",
                 component="orchestrator",
-                status="DENY",
-                reason_ids=missing_reason,
+                status=outcome,
+                reason_ids=reason_ids,
             )
         )
 
-        reason_ids = missing_reason
-
         hash_material = {
             "request": asdict(request),
-            "outcome": "DENY",
+            "outcome": outcome,
             "reason_ids": list(reason_ids),
             "trace": [asdict(t) for t in trace],
         }
 
-        try:
-            context_hash = compute_context_hash(hash_material)
-        except (TypeError, ValueError) as e:
-            # Canonicalization/hashing is part of the contract → explicit reason id
-            raise TVAError(ReasonId.HASHING_FAILED.value, f"hashing failed: {e}") from e
+        context_hash = compute_context_hash(hash_material)
 
-        return OrchestratorV3Response.deny(
+        final = OrchestratorV3Response(
+            contract_version=CONTRACT_VERSION,
+            outcome=outcome,
             context_hash=context_hash,
             reason_ids=reason_ids,
             trace=tuple(trace),
         )
 
+        # Adaptive Core sink (must not influence outcome)
+        try:
+            trace_entry = AdaptiveCoreBridge().report_v3(request, final)
+            final.trace = tuple(list(final.trace) + [trace_entry])  # type: ignore[misc]
+        except Exception:
+            # sink failures must not change final outcome; record fail-closed telemetry
+            final.trace = tuple(
+                list(final.trace)
+                + [
+                    TraceEntry(
+                        stage="adaptive_core",
+                        component="adaptive_core",
+                        status="ERROR",
+                        reason_ids=(ReasonId.TELEMETRY_FAILED.value,),
+                        notes="phase3_sink_failed",
+                    )
+                ]
+            )  # type: ignore[misc]
+
+        return final
+
     except TVAError as e:
-        # Deterministic DENY for validation / hashing errors
         trace = (
             TraceEntry(
                 stage="input_validation",
@@ -112,27 +118,17 @@ def orchestrate(request: OrchestratorV3Request) -> OrchestratorV3Response:
             "trace": [asdict(t) for t in trace],
         }
 
-        # This must not throw; if it does, we fall back to INTERNAL_ERROR below.
-        try:
-            context_hash = compute_context_hash(hash_material)
-        except Exception:
-            context_hash = compute_context_hash(
-                {
-                    "request": {"contract_version": request.contract_version},
-                    "outcome": "DENY",
-                    "reason_ids": [ReasonId.INTERNAL_ERROR.value],
-                    "trace": [{"stage": "input_validation", "component": "orchestrator", "status": "DENY"}],
-                }
-            )
+        context_hash = compute_context_hash(hash_material)
 
-        return OrchestratorV3Response.deny(
+        return OrchestratorV3Response(
+            contract_version=CONTRACT_VERSION,
+            outcome="DENY",
             context_hash=context_hash,
             reason_ids=(e.reason_id,),
             trace=trace,
         )
 
     except Exception:
-        # Catch-all, deterministic
         trace = (
             TraceEntry(
                 stage="input_validation",
@@ -151,7 +147,9 @@ def orchestrate(request: OrchestratorV3Request) -> OrchestratorV3Response:
 
         context_hash = compute_context_hash(hash_material)
 
-        return OrchestratorV3Response.deny(
+        return OrchestratorV3Response(
+            contract_version=CONTRACT_VERSION,
+            outcome="DENY",
             context_hash=context_hash,
             reason_ids=(ReasonId.INTERNAL_ERROR.value,),
             trace=trace,
