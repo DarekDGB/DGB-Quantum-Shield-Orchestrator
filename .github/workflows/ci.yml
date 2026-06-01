@@ -4,32 +4,24 @@ on:
   push:
   pull_request:
 
-permissions:
-  contents: read
-
 jobs:
-  test:
+  tests:
     runs-on: ubuntu-latest
 
-    strategy:
-      fail-fast: false
-      matrix:
-        python-version: ["3.11"]
-
     steps:
-      - name: Checkout
+      - name: Checkout repository
         uses: actions/checkout@v4
 
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
-          python-version: ${{ matrix.python-version }}
+          python-version: "3.11"
 
-      - name: Install
+      - name: Install package with test dependencies
         run: |
           python -m pip install --upgrade pip
-          python -m pip install -e ".[dev]"
+          python -m pip install -e ".[test]"
 
-      - name: Run tests (coverage gate)
+      - name: Run tests with full package coverage gate
         run: |
-          pytest --cov=shield_orchestrator --cov-report=term-missing --cov-fail-under=90 -q
+          pytest --cov=shield_orchestrator --cov-report=term-missing --cov-fail-under=100 -q
