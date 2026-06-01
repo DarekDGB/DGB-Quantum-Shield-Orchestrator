@@ -56,9 +56,9 @@ Security properties are enforced through:
 - negative-first test coverage
 - deterministic hashing tests
 - fail-closed behavior tests
-- CI-enforced coverage thresholds (≥ 90%)
+- CI-enforced 100% full package coverage
 
-If tests pass, the contract behavior is considered authoritative.
+If tests pass, the contract behavior is considered authoritative. Any reduction below 100% coverage is treated as a release-blocking defect for v3.0.0 stabilisation.
 
 ---
 
