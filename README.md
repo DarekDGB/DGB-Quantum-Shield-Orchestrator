@@ -1,4 +1,4 @@
-# DigiByte Quantum Shield Orchestrator (v3)
+# DigiByte Quantum Shield Orchestrator (v3.1.0)
 
 ![CI](https://github.com/DarekDGB/DGB-Quantum-Shield-Orchestrator/actions/workflows/ci.yml/badge.svg)
 ![Coverage 100%](https://img.shields.io/badge/coverage-100%25-brightgreen)
@@ -6,6 +6,8 @@
 ![Python](https://img.shields.io/badge/python-3.11%2B-blue)
 
 **Shield Contract v3 • Deterministic Orchestration • Fail-Closed Security**
+
+**Shield v3.1.0 foundation-hardening release.** This release preserves the Shield Contract v3 surface while aligning Orchestrator release metadata, documentation, and CI proof for the Shield v3.1.0 track.
 
 The **DigiByte Quantum Shield Orchestrator** is the **v3 coordination layer**
 that deterministically connects all DigiByte Quantum Shield components and
@@ -144,7 +146,7 @@ If documentation and code diverge, **contracts and tests win**.
 - negative-first testing
 - fail-closed on all errors
 
-### v3.0.0 CI Proof
+### v3.1.0 CI Proof
 
 ```text
 17 passed
