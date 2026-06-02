@@ -3,7 +3,7 @@
 ## Project: DGB-Quantum-Shield-Orchestrator
 **Maintainer:** DarekDGB  
 **License:** MIT  
-**Status:** Shield Contract v3 (deterministic, fail-closed)
+**Status:** Shield Contract v3.1.0 foundation hardening (deterministic, fail-closed)
 
 ---
 
@@ -96,7 +96,7 @@ Planned future work may include:
 - formal audits
 - Adamantine Wallet OS integration
 
-These changes will occur **only via explicit versioned upgrades**.
+These changes will occur **only via explicit versioned upgrades**. Manifest / verdict / receipt / proof-pack hardening is intentionally deferred to the next Shield roadmap phase and is not claimed as part of this foundation-hardening release.
 
 ---
 
