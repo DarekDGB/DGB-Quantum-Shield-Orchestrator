@@ -21,7 +21,7 @@ This repository **does NOT**:
 - hold private keys
 - sign transactions
 - execute blockchain actions
-- make autonomous allow / deny policy decisions
+- hold authority outside the explicit v3 orchestration contract
 - self-upgrade or self-modify
 
 All behavior is **deny-by-default** unless explicitly extended in future versions.
@@ -58,7 +58,7 @@ Security properties are enforced through:
 - fail-closed behavior tests
 - CI-enforced 100% full package coverage
 
-If tests pass, the contract behavior is considered authoritative. Any reduction below 100% coverage is treated as a release-blocking defect for v3.0.0 stabilisation.
+If tests pass, the contract behavior is considered authoritative. Any reduction below 100% coverage is treated as a release-blocking defect for v3.1.0 hardening.
 
 ---
 
