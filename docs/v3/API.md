@@ -60,7 +60,7 @@ Each trace entry MUST include:
 
 - `stage: str`
 - `component: str`
-- `status: str` (OK / DENY / ERROR)
+- `status: str` (OK / DENY / ERROR / SKIPPED)
 - `reason_ids: list[str]`
 - `component_context_hash: str | None`
 
