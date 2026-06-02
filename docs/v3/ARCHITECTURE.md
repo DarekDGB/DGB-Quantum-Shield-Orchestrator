@@ -68,8 +68,8 @@ The Orchestrator MUST evaluate stages in the following fixed order:
 2. **Sentinel AI v3**
 3. **DQSN v3**
 4. **ADN v3**
-5. **QWG v3**
-6. **Guardian Wallet v3**
+5. **Guardian Wallet v3**
+6. **QWG v3**
 7. **Final synthesis**
 
 This ordering is part of the contract because it affects determinism and trace.
