@@ -3,6 +3,8 @@ from __future__ import annotations
 import pytest
 
 from shield_orchestrator.v3.contracts.v3_2_receipt import (
+    COMPONENT_EVIDENCE_FAMILIES,
+    COMPONENT_REASON_IDS,
     SUPPORTED_COMPONENTS,
     build_manifest,
     build_receipt,
@@ -23,9 +25,9 @@ def verdict(component_id: str, decision: str = "ALLOW") -> dict[str, object]:
         "request_id": "req-1",
         "context_hash": CTX,
         "decision": decision,
-        "reason_ids": [f"{component_id.upper()}_TEST_REASON"],
+        "reason_ids": [COMPONENT_REASON_IDS[component_id][0]],
         "evidence_hash": EVID,
-        "evidence_families": ["component_verdict"],
+        "evidence_families": [COMPONENT_EVIDENCE_FAMILIES[component_id][0]],
         "metadata": {},
         "fail_closed": True,
     }
@@ -82,9 +84,11 @@ def test_v3_2_receipt_policy_deny_and_escalate(decision, outcome, handoff):
         lambda items: items[0].__setitem__("decision", "MAYBE"),
         lambda items: items[0].__setitem__("reason_ids", []),
         lambda items: items[0].__setitem__("reason_ids", [""]),
+        lambda items: items[0].__setitem__("reason_ids", ["UNKNOWN_REASON"]),
         lambda items: items[0].__setitem__("evidence_hash", "bad"),
         lambda items: items[0].__setitem__("evidence_families", []),
-        lambda items: items[0].__setitem__("evidence_families", ["component_verdict", "component_verdict"]),
+        lambda items: items[0].__setitem__("evidence_families", ["unknown_family"]),
+        lambda items: items[0].__setitem__("evidence_families", [COMPONENT_EVIDENCE_FAMILIES[items[0]["component_id"]][0], COMPONENT_EVIDENCE_FAMILIES[items[0]["component_id"]][0]]),
         lambda items: items[0].__setitem__("metadata", []),
         lambda items: items[0].__setitem__("fail_closed", False),
         lambda items: items[0].pop("request_id"),
