@@ -1,48 +1,95 @@
-# Changelog
+# Changelog — DigiByte Quantum Shield Orchestrator
+
+All notable changes to this repository are documented here.
+
+The format follows a simple release-note style suitable for Shield component audit and release review.
+
+---
+
+## v3.2.0 — Manifest / Verdict / Receipt Boundary Hardening
+
+### Added
+
+- Added Shield v3.2.0 manifest / registry / receipt-boundary hardening.
+- Added deterministic Shield Orchestrator receipt construction.
+- Added canonical receipt validation.
+- Added AdamantineOS handoff documentation.
+- Added stable evidence-family registry documentation.
+- Added v3.2.0 proof-pack documentation.
+- Added v3.2.0 test matrix documentation.
+- Added v3.2.0 Orchestrator receipt lock tests.
+- Added explicit component-evidence-only boundary language.
+
+### Changed
+
+- Updated package metadata to `3.2.0`.
+- Updated README to make v3.2.0 the current receipt-boundary hardening surface.
+- Updated security policy to define the Orchestrator as the only Shield receipt boundary for AdamantineOS handoff.
+- Clarified that raw Shield component outputs are not final signing, execution, or approval authority.
+- Clarified that Shield `ALLOW` only permits AdamantineOS to continue its own checks.
+- Clarified that AdamantineOS must consume Shield through the deterministic Orchestrator receipt only.
+
+### Security
+
+- Reinforced fail-closed handling for malformed verdict and receipt data.
+- Reinforced duplicate component verdict rejection.
+- Reinforced stable reason ID and evidence-family validation.
+- Reinforced no signing, no broadcasting, no key custody, no consensus modification, and no hidden authority.
+- Locked v3.2.0 release readiness behind final roadmap checklist, CI proof, fresh ZIP audit, and Red Team report.
+
+### Release Gate
+
+Do **not** tag v3.2.0 until:
+
+- roadmap checklist is complete
+- tests pass locally or in CI
+- coverage gate remains at 100%
+- manifest / reason ID / evidence-family docs are aligned
+- receipt boundary tests pass
+- AdamantineOS handoff boundary is respected
+- final fresh ZIP audit is complete
+- Red Team report is complete
+- no docs-vs-tests mismatch remains
+
+---
 
 ## v3.1.0 — Shield Orchestrator Foundation Hardening
 
-Shield v3.1.0 foundation-hardening release for the DigiByte Quantum Shield Orchestrator.
+### Added
 
-- Updates package metadata to `3.1.0`
-- Aligns release-facing documentation to the Shield v3.1.0 foundation-hardening track
-- Confirms 100% full `shield_orchestrator` package coverage in CI
-- Preserves deterministic orchestration and fail-closed behavior
-- Preserves Adaptive Core as a read-only sink with no outcome authority
-- Clarifies that this release does not introduce a new Shield contract version
-- Defers manifest / verdict / receipt / proof-pack hardening to the next Shield roadmap phase
+- Foundation hardening for Shield v3 Orchestrator.
+- CI coverage confirmation for the `shield_orchestrator` package.
+- Documentation alignment for deterministic orchestration and fail-closed behavior.
 
-CI proof:
+### Changed
 
-```text
-17 passed
-248 statements
-0 missed
-100% coverage
-Required test coverage of 100% reached.
-```
+- Updated package metadata to `3.1.0`.
+- Clarified Adaptive Core as read-only advisory input with no outcome authority.
+- Clarified Orchestrator role as deterministic integration boundary.
 
-Boundary:
+### Security
 
-This release is foundation hardening only. It preserves Shield Contract v3 behavior and does not implement the later manifest / verdict / receipt / proof-pack hardening layer.
+- Preserved deterministic orchestration.
+- Preserved fail-closed behavior.
+- Preserved no signing, no broadcasting, and no consensus authority.
 
-## v3.0.0 — Shield Orchestrator Stabilisation
+---
 
-Stabilised Shield Contract v3 orchestrator release.
+## v3.0.0 — Stable Shield Orchestrator Baseline
 
-- Locks package version to `3.0.0`
-- Enforces 100% full `shield_orchestrator` package coverage in CI
-- Adds v3 full coverage lock tests for fail-closed and error-path behaviour
-- Adds packaged typing marker
-- Confirms deterministic orchestration behaviour under CI
-- Preserves Adaptive Core as a read-only sink with no outcome authority
+### Added
 
-CI proof:
+- Stable Shield v3 Orchestrator baseline.
+- Deterministic component coordination.
+- Fail-closed orchestration behavior.
+- Initial v3 contract documentation.
 
-```text
-17 passed
-248 statements
-0 missed
-100% coverage
-Required test coverage of 100% reached.
-```
+---
+
+## Notes
+
+Tests define truth.
+
+Documentation must not claim behavior that tests do not enforce.
+
+© 2025 DarekDGB
