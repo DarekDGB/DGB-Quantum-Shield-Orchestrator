@@ -32,6 +32,77 @@ SUPPORTED_EVIDENCE_FAMILIES = (
     "receipt_context",
     "final_policy",
 )
+
+COMPONENT_REASON_IDS = {
+    "guardian_wallet": (
+        "GW_OK_HEALTHY_ALLOW",
+        "GW_ESCALATE_QID_REQUIRED",
+        "GW_DENY_POLICY_BLOCKED",
+        "GW_ERROR_INVALID_VERDICT",
+        "GW_ERROR_CONTEXT_HASH_MISMATCH",
+    ),
+    "adn": (
+        "ADN_OK_COORDINATION_ALLOW",
+        "ADN_ESCALATE_POLICY_REVIEW",
+        "ADN_DENY_DEFENSE_TRIGGERED",
+        "ADN_ERROR_INVALID_VERDICT",
+        "ADN_ERROR_CONTEXT_HASH_MISMATCH",
+    ),
+    "sentinel_ai": (
+        "SNTL_OK_TELEMETRY_ALLOW",
+        "SNTL_ESCALATE_THREAT_REVIEW",
+        "SNTL_DENY_THREAT_DETECTED",
+        "SNTL_ERROR_AI_OUTPUT_UNTRUSTED",
+        "SNTL_ERROR_CONTEXT_HASH_MISMATCH",
+    ),
+    "dqsn": (
+        "DQSN_OK_NETWORK_ALLOW",
+        "DQSN_ESCALATE_QUANTUM_SIGNAL",
+        "DQSN_DENY_NETWORK_RISK",
+        "DQSN_ERROR_INVALID_VERDICT",
+        "DQSN_ERROR_CONTEXT_HASH_MISMATCH",
+    ),
+    "qwg": (
+        "QWG_OK_POSTURE_ALLOW",
+        "QWG_ESCALATE_QUANTUM_POSTURE",
+        "QWG_DENY_KEY_RISK",
+        "QWG_ERROR_INVALID_VERDICT",
+        "QWG_ERROR_CONTEXT_HASH_MISMATCH",
+    ),
+}
+
+COMPONENT_EVIDENCE_FAMILIES = {
+    "guardian_wallet": (
+        "wallet_context",
+        "transaction_context",
+        "qid_auth_context",
+        "sentinel_signal",
+        "device_signal",
+    ),
+    "adn": (
+        "defense_signal",
+        "policy_context",
+        "coordination_state",
+    ),
+    "sentinel_ai": (
+        "telemetry",
+        "monitor_signal",
+        "threat_observation",
+        "adaptive_core_bridge_event",
+    ),
+    "dqsn": (
+        "network_observation",
+        "quantum_signal",
+        "node_state",
+        "aggregate_signal",
+    ),
+    "qwg": (
+        "wallet_posture",
+        "quantum_risk_context",
+        "key_age_context",
+        "dormancy_context",
+    ),
+}
 REQUIRED_VERDICT_FIELDS = frozenset({
     "component_id",
     "contract_version",
@@ -124,13 +195,21 @@ def validate_component_verdict(verdict: dict[str, Any], *, expected_context_hash
         raise ValueError("unsupported decision")
     if not isinstance(verdict["reason_ids"], list) or not verdict["reason_ids"]:
         raise ValueError("reason_ids must be non-empty list")
+    allowed_reason_ids = set(COMPONENT_REASON_IDS[component_id])
     for reason_id in verdict["reason_ids"]:
-        _require_non_empty_str(reason_id, field="reason_id")
+        clean_reason_id = _require_non_empty_str(reason_id, field="reason_id")
+        if clean_reason_id not in allowed_reason_ids:
+            raise ValueError("unknown component reason_id")
     _require_hash(verdict["evidence_hash"], field="evidence_hash")
     if not isinstance(verdict["evidence_families"], list) or not verdict["evidence_families"]:
         raise ValueError("evidence_families must be non-empty list")
     if len(set(verdict["evidence_families"])) != len(verdict["evidence_families"]):
         raise ValueError("duplicated evidence family")
+    allowed_evidence_families = set(COMPONENT_EVIDENCE_FAMILIES[component_id])
+    for evidence_family in verdict["evidence_families"]:
+        clean_evidence_family = _require_non_empty_str(evidence_family, field="evidence_family")
+        if clean_evidence_family not in allowed_evidence_families:
+            raise ValueError("unknown component evidence family")
     if not isinstance(verdict["metadata"], dict):
         raise ValueError("metadata must be dict")
     return dict(verdict)
