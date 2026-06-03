@@ -1,163 +1,269 @@
-# DigiByte Quantum Shield Orchestrator (v3.1.0)
+# 🧭 DigiByte Quantum Shield Orchestrator v3.2.0
 
 ![CI](https://github.com/DarekDGB/DGB-Quantum-Shield-Orchestrator/actions/workflows/ci.yml/badge.svg)
 ![Coverage 100%](https://img.shields.io/badge/coverage-100%25-brightgreen)
 ![License](https://img.shields.io/github/license/DarekDGB/DGB-Quantum-Shield-Orchestrator)
 ![Python](https://img.shields.io/badge/python-3.11%2B-blue)
+![Status](https://img.shields.io/badge/status-RECEIPT--BOUNDARY--LOCKED-critical)
 
-**Shield Contract v3 • Deterministic Orchestration • Fail-Closed Security**
-
-**Shield v3.1.0 foundation-hardening release.** This release preserves the Shield Contract v3 surface while aligning Orchestrator release metadata, documentation, and CI proof for the Shield v3.1.0 track.
-
-The **DigiByte Quantum Shield Orchestrator** is the **v3 coordination layer**
-that deterministically connects all DigiByte Quantum Shield components and
-forwards the final security envelope to **Adaptive Core v3** as a read-only sink.
-
-It produces a **single deterministic v3 envelope** that downstream callers
-(such as **Adamantine Wallet OS**) can treat as the authoritative shield result.
-
-> Orchestrator v3 coordinates and aggregates.  
-> It does **not** sign, broadcast, hold keys, or mutate state.
+**Shield Receipt Boundary • Deterministic Aggregation • Fail-Closed Orchestration**  
+**Architecture & Implementation by @DarekDGB — MIT Licensed**
 
 ---
 
-## Core Properties
+## Purpose
 
-- **Contract v3 only** (any other version → fail-closed)
-- **Deterministic & replayable** (same input → same output → same `context_hash`)
-- **Fail-closed** (no silent defaults, no best-effort behavior)
-- **Strict canonicalization** (stable JSON → stable hashing)
-- **No hidden authority** (aggregation only, never escalation)
-- **Fully traceable** (component-by-component execution trace)
+**DigiByte Quantum Shield Orchestrator v3.2.0** is the deterministic aggregation and receipt boundary for the **DigiByte Quantum Shield**.
 
----
+The Orchestrator consumes component evidence from Shield layers, validates it, aggregates it deterministically, and produces the single Shield receipt that AdamantineOS may consume.
 
-## High-Level Architecture
+The Orchestrator is responsible for:
 
-```
-┌─────────────────────┐
-│ Adamantine Wallet OS│
-└─────────┬───────────┘
-          │ OrchestratorV3Request
-          ▼
-┌────────────────────────────────────┐
-│  Quantum Shield Orchestrator (v3)   │
-│  - strict validation                │
-│  - deterministic ordering           │
-│  - deny-by-default synthesis        │
-└─────────┬───────────┬──────────────┘
-          │           │
-          │           │ read-only report
-          │           ▼
-          │   ┌──────────────────┐
-          │   │ Adaptive Core v3 │
-          │   │ (no authority)   │
-          │   └──────────────────┘
-          │
-          ▼
-┌────────────────────────────────────┐
-│ Shield Contract v3 Components       │
-│                                    │
-│  1. Sentinel AI v3                 │
-│  2. DQSN v3                        │
-│  3. ADN v3                         │
-│  4. Guardian Wallet v3             │
-│  5. QWG v3                         │
-└────────────────────────────────────┘
+- deterministic Shield component coordination
+- strict component verdict validation
+- stable reason ID handling
+- evidence-family discipline
+- canonical context hashing
+- fail-closed aggregation
+- AdamantineOS handoff through one deterministic receipt
 
-Final output:
-→ OrchestratorV3Response (single deterministic envelope)
-```
+The Orchestrator does **not**:
+
+- sign transactions
+- broadcast transactions
+- hold, derive, or access private keys
+- modify DigiByte consensus
+- bypass AdamantineOS checks
+- create autonomous execution approval
 
 ---
 
-## Role in the DigiByte Quantum Shield
-
-Adamantine Wallet OS  
-→ **Orchestrator v3**  
-→ Sentinel AI v3  
-→ DQSN v3  
-→ ADN v3  
-→ Guardian Wallet v3  
-→ QWG v3  
-
-Signals are aggregated and returned through the Orchestrator
-as a **single Shield Contract v3 envelope**.
-
-**Adaptive Core v3** receives reports only.
-It cannot influence outcomes or execution.
-
----
-
-## What Orchestrator v3 Produces
-
-A single **v3 response envelope** containing:
-
-- `contract_version = 3`
-- deterministic `context_hash`
-- final `outcome` (`DENY` by default)
-- stable `reason_ids`
-- full deterministic execution trace
-- canonical JSON suitable for audit and replay
-
----
-
-## What Orchestrator v3 Does NOT Do
-
-- hold private keys or secrets
-- sign or broadcast transactions
-- modify wallet or node state
-- guess missing fields
-- auto-upgrade layers
-- bypass Guardian / QWG / WSQK / EQC rules
-- execute consensus or governance logic
-
----
-
-## Documentation (v3)
-
-Authoritative documentation lives under:
-
-```
-docs/v3/
-```
-
-- INDEX.md
-- CONTRACT.md
-- ARCHITECTURE.md
-- API.md
-- REASON_IDS.md
-
-Legacy material is preserved under:
-
-```
-docs/legacy/
-```
-
-If documentation and code diverge, **contracts and tests win**.
-
----
-
-## Quality & Verification
-
-- CI enforced
-- 100% full package test coverage
-- deterministic tests only
-- negative-first testing
-- fail-closed on all errors
-
-### v3.1.0 CI Proof
+## Position in the DigiByte Quantum Shield
 
 ```text
-17 passed
-248 statements
-0 missed
-100% coverage
-Required test coverage of 100% reached.
+┌───────────────────────────────────────────────┐
+│              AdamantineOS                     │
+│   Consumes only Shield Orchestrator receipt   │
+└───────────────────────────────────────────────┘
+                       ▲
+                       │ deterministic receipt only
+┌───────────────────────────────────────────────┐
+│          Shield Orchestrator v3.2             │
+│   Final Shield aggregation + receipt boundary │
+└───────────────────────────────────────────────┘
+                       ▲
+                       │ component verdict evidence
+┌───────────────────────────────────────────────┐
+│ Guardian Wallet │ QWG │ ADN │ DQSN │ Sentinel │
+│      Shield components produce evidence       │
+└───────────────────────────────────────────────┘
 ```
+
+AdamantineOS must not consume raw Shield component outputs directly.
+
+Only the deterministic Shield Orchestrator receipt is valid for Shield-to-AdamantineOS handoff.
+
+---
+
+## Core Mission
+
+### Deterministic Aggregation
+
+The Orchestrator must produce the same output for the same valid input.
+
+Aggregation must not depend on:
+
+- timestamps
+- randomness
+- network state
+- file-system state
+- runtime environment
+- dictionary iteration order
+- hidden mutable state
+
+### Fail-Closed Receipt Boundary
+
+The Orchestrator must reject unsafe handoff conditions, including:
+
+- missing component verdict data
+- malformed component verdict data
+- unknown component identity
+- unknown reason IDs
+- unknown evidence families
+- duplicate or conflicting authority claims
+- mismatched context hashes
+- unsupported contract versions
+- non-canonical or unserialisable input
+- any ambiguity affecting authority, determinism, or auditability
+
+### One Shield Receipt
+
+For v3.2.0, the Orchestrator is the Shield stack’s single deterministic receipt boundary.
+
+Component outputs are evidence.
+
+The Orchestrator receipt is the Shield handoff artifact.
+
+AdamantineOS still performs its own checks after receiving a Shield `ALLOW`.
+
+A Shield `ALLOW` is **not** final signing or execution approval.
+
+---
+
+## v3.2.0 Receipt Lock
+
+The v3.2.0 upgrade adds the manifest / verdict / receipt integration boundary required before AdamantineOS integration.
+
+The Orchestrator receipt lock enforces:
+
+- component verdict validation
+- canonical receipt construction
+- deterministic receipt hashing
+- explicit `ALLOW`, `ESCALATE`, or `DENY` outcome mapping
+- stable reason ID propagation
+- evidence-family validation
+- fail-closed malformed receipt rejection
+- AdamantineOS handoff discipline
+
+See:
+
+- `docs/v3/MANIFEST.md`
+- `docs/v3/REASON_IDS.md`
+- `docs/v3/EVIDENCE_FAMILIES.md`
+- `docs/v3/TEST_MATRIX.md`
+- `docs/v3/PROOF_PACK.md`
+- `docs/v3/ADAMANTINEOS_HANDOFF.md`
+
+---
+
+## Repository Layout
+
+```text
+DGB-Quantum-Shield-Orchestrator/
+├─ README.md
+├─ LICENSE
+├─ CHANGELOG.md
+├─ SECURITY.md
+├─ docs/
+│  └─ v3/
+│     ├─ ADAMANTINEOS_HANDOFF.md
+│     ├─ API.md
+│     ├─ ARCHITECTURE.md
+│     ├─ CONTRACT.md
+│     ├─ EVIDENCE_FAMILIES.md
+│     ├─ INDEX.md
+│     ├─ MANIFEST.md
+│     ├─ PROOF_PACK.md
+│     ├─ REASON_IDS.md
+│     └─ TEST_MATRIX.md
+├─ tests/
+│  └─ test_v3_2_orchestrator_receipt_lock.py
+└─ src/
+   └─ shield_orchestrator/
+      ├─ bridges/
+      ├─ v3/
+      │  ├─ canonical_json.py
+      │  ├─ context_hash.py
+      │  ├─ orchestrate.py
+      │  └─ contracts/
+      │     ├─ envelope.py
+      │     ├─ reason_ids.py
+      │     ├─ version.py
+      │     └─ v3_2_receipt.py
+      ├─ config.py
+      ├─ context.py
+      ├─ errors.py
+      └─ pipeline.py
+```
+
+---
+
+## Tests & Security Guarantees
+
+Security and regression tests enforce:
+
+- deterministic orchestration
+- fail-closed behavior
+- strict component identity validation
+- stable reason IDs
+- stable evidence families
+- canonical receipt construction
+- receipt hash determinism
+- malformed receipt rejection
+- duplicate verdict rejection
+- AdamantineOS handoff boundary assumptions
+- no component-level bypass as final authority
+
+Tests define truth.
+
+No release is locked unless CI proves the contract surface.
+
+---
+
+## v3.2.0 Status
+
+The Orchestrator is aligned with the Shield v3.2.0 integration-boundary track:
+
+- package metadata set to `3.2.0`
+- manifest / reason ID / evidence-family docs are present
+- AdamantineOS handoff documentation is present
+- v3.2.0 receipt lock tests are present
+- deterministic receipt behavior is preserved
+- no consensus authority is added
+- no signing, broadcasting, key custody, or hidden execution authority is added
+- AdamantineOS must consume Shield through the Orchestrator receipt only
+
+Do **not** tag v3.2.0 until the final roadmap checklist, fresh ZIP audit, CI proof, and Red Team report are complete.
+
+---
+
+## Shield v3 Invariants
+
+The Orchestrator follows the Shield v3 baseline invariants:
+
+- **Deny-by-default** — anything not explicitly allowed is rejected.
+- **Fail-closed** — invalid, ambiguous, partial, or unsafe input is rejected.
+- **Deterministic execution** — same valid input must produce the same output.
+- **No silent fallback** — failures must surface as explicit reasoned rejections.
+- **Component evidence only** — raw component verdicts do not approve execution.
+- **Single receipt boundary** — AdamantineOS receives Shield state only through the deterministic Orchestrator receipt.
+- **Human / AdamantineOS final authority remains outside Shield** — Shield `ALLOW` is not final signing approval.
+
+Any violation of these invariants is a security defect.
+
+---
+
+## Documentation
+
+- Index: `docs/v3/INDEX.md`
+- API: `docs/v3/API.md`
+- Architecture: `docs/v3/ARCHITECTURE.md`
+- Contract: `docs/v3/CONTRACT.md`
+- Manifest: `docs/v3/MANIFEST.md`
+- AdamantineOS handoff: `docs/v3/ADAMANTINEOS_HANDOFF.md`
+- Reason IDs: `docs/v3/REASON_IDS.md`
+- Evidence Families: `docs/v3/EVIDENCE_FAMILIES.md`
+- Test Matrix: `docs/v3/TEST_MATRIX.md`
+- Proof Pack: `docs/v3/PROOF_PACK.md`
+
+---
+
+## Contribution Policy
+
+Rules:
+
+- No consensus-touching behavior.
+- No signing or broadcasting behavior.
+- No private-key custody behavior.
+- No AdamantineOS direct execution approval.
+- Deterministic receipt behavior only.
+- Tests required for contract changes.
+- No bypass of the Shield Orchestrator receipt boundary.
+- No weakening of the 100% coverage gate.
 
 ---
 
 ## License
 
-MIT License © 2025 **DarekDGB**
+MIT License  
+© 2025 **DarekDGB**
