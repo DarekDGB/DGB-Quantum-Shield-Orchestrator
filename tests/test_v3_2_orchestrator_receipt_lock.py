@@ -1,5 +1,8 @@
 from __future__ import annotations
 
+import json
+from pathlib import Path
+
 import pytest
 
 from shield_orchestrator.v3.contracts.v3_2_receipt import (
@@ -35,6 +38,22 @@ def verdict(component_id: str, decision: str = "ALLOW") -> dict[str, object]:
 
 def all_verdicts(decision: str = "ALLOW") -> list[dict[str, object]]:
     return [verdict(component, decision) for component in SUPPORTED_COMPONENTS]
+
+
+def test_v3_2_shared_adamantine_fixture_matches_orchestrator_receipt_contract():
+    fixture_path = Path(__file__).parent / "fixtures" / "adamantine" / "shield_orchestrator_receipt_v3_2_component_baseline.json"
+    fixture = json.loads(fixture_path.read_text())
+    expected = build_receipt(
+        request_id="req-milestone-16c-shared-vector",
+        context_hash=CTX,
+        component_verdicts=[
+            {**verdict(component), "request_id": "req-milestone-16c-shared-vector"}
+            for component in SUPPORTED_COMPONENTS
+        ],
+    )
+
+    assert fixture == expected
+    assert validate_receipt(fixture, expected_context_hash=CTX) == expected
 
 
 def test_v3_2_orchestrator_manifest_declares_single_boundary():
@@ -99,6 +118,48 @@ def test_v3_2_malformed_component_verdicts_fail_closed(mutator):
     mutator(items)
     with pytest.raises(ValueError):
         build_receipt(request_id="req-3", context_hash=CTX, component_verdicts=items)
+
+
+def test_v3_2_receipt_skipped_component_fails_closed_not_allow():
+    verdicts = all_verdicts()
+    verdicts[0] = verdict(SUPPORTED_COMPONENTS[0], "SKIPPED")
+
+    receipt = build_receipt(request_id="req-skipped", context_hash=CTX, component_verdicts=verdicts)
+
+    assert receipt["final_outcome"] == "DENY"
+    assert receipt["dominant_reason_ids"] == ["ORCH_ERROR_MISSING_REQUIRED_VERDICT"]
+    assert receipt["adamantineos_handoff"] == {
+        "handoff_allowed": False,
+        "handoff_reason": "ORCH_ERROR_MISSING_REQUIRED_VERDICT",
+    }
+
+
+def test_v3_2_component_metadata_authority_fields_fail_closed():
+    verdicts = all_verdicts()
+    verdicts[0]["metadata"] = {"nested": {"final_approval": True}}
+
+    with pytest.raises(ValueError, match="forbidden authority"):
+        build_receipt(request_id="req-authority", context_hash=CTX, component_verdicts=verdicts)
+
+    list_nested = all_verdicts()
+    list_nested[0]["metadata"] = {"events": [{"override": True}]}
+    with pytest.raises(ValueError, match="forbidden authority"):
+        build_receipt(request_id="req-authority-list", context_hash=CTX, component_verdicts=list_nested)
+
+    safe_scalar = all_verdicts()
+    safe_scalar[0]["metadata"] = {"note": "observed"}
+    receipt = build_receipt(request_id="req-safe-metadata", context_hash=CTX, component_verdicts=safe_scalar)
+    assert receipt["final_outcome"] == "ALLOW"
+
+
+def test_v3_2_hashes_must_be_lowercase_sha256_hex():
+    verdicts = all_verdicts()
+    verdicts[0]["evidence_hash"] = "B" * 64
+    with pytest.raises(ValueError, match="lowercase"):
+        build_receipt(request_id="req-uppercase-evidence", context_hash=CTX, component_verdicts=verdicts)
+
+    with pytest.raises(ValueError, match="lowercase"):
+        build_receipt(request_id="req-uppercase-context", context_hash="A" * 64, component_verdicts=all_verdicts())
 
 
 def test_v3_2_receipt_tampering_and_bad_inputs_fail_closed():
