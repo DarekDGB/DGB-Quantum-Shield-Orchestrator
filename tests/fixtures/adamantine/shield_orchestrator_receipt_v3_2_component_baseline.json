@@ -1,0 +1,103 @@
+{
+  "adamantineos_handoff": {
+    "handoff_allowed": true,
+    "handoff_reason": "ORCH_OK_ALL_COMPONENTS_ALLOW"
+  },
+  "component_verdicts": [
+    {
+      "component_id": "adn",
+      "context_hash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+      "contract_version": 3,
+      "decision": "ALLOW",
+      "evidence_families": [
+        "defense_signal"
+      ],
+      "evidence_hash": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+      "fail_closed": true,
+      "metadata": {},
+      "reason_ids": [
+        "ADN_OK_COORDINATION_ALLOW"
+      ],
+      "request_id": "req-milestone-16c-shared-vector",
+      "schema_version": "shield.verdict.v1"
+    },
+    {
+      "component_id": "dqsn",
+      "context_hash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+      "contract_version": 3,
+      "decision": "ALLOW",
+      "evidence_families": [
+        "network_observation"
+      ],
+      "evidence_hash": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+      "fail_closed": true,
+      "metadata": {},
+      "reason_ids": [
+        "DQSN_OK_NETWORK_ALLOW"
+      ],
+      "request_id": "req-milestone-16c-shared-vector",
+      "schema_version": "shield.verdict.v1"
+    },
+    {
+      "component_id": "guardian_wallet",
+      "context_hash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+      "contract_version": 3,
+      "decision": "ALLOW",
+      "evidence_families": [
+        "wallet_context"
+      ],
+      "evidence_hash": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+      "fail_closed": true,
+      "metadata": {},
+      "reason_ids": [
+        "GW_OK_HEALTHY_ALLOW"
+      ],
+      "request_id": "req-milestone-16c-shared-vector",
+      "schema_version": "shield.verdict.v1"
+    },
+    {
+      "component_id": "qwg",
+      "context_hash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+      "contract_version": 3,
+      "decision": "ALLOW",
+      "evidence_families": [
+        "wallet_posture"
+      ],
+      "evidence_hash": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+      "fail_closed": true,
+      "metadata": {},
+      "reason_ids": [
+        "QWG_OK_POSTURE_ALLOW"
+      ],
+      "request_id": "req-milestone-16c-shared-vector",
+      "schema_version": "shield.verdict.v1"
+    },
+    {
+      "component_id": "sentinel_ai",
+      "context_hash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+      "contract_version": 3,
+      "decision": "ALLOW",
+      "evidence_families": [
+        "telemetry"
+      ],
+      "evidence_hash": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+      "fail_closed": true,
+      "metadata": {},
+      "reason_ids": [
+        "SNTL_OK_TELEMETRY_ALLOW"
+      ],
+      "request_id": "req-milestone-16c-shared-vector",
+      "schema_version": "shield.verdict.v1"
+    }
+  ],
+  "context_hash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+  "contract_version": 3,
+  "dominant_reason_ids": [
+    "ORCH_OK_ALL_COMPONENTS_ALLOW"
+  ],
+  "fail_closed": true,
+  "final_outcome": "ALLOW",
+  "receipt_hash": "7aa20ed5873060d358239b6c48968a923f87bf9da66b44db967f5c28ba919c39",
+  "request_id": "req-milestone-16c-shared-vector",
+  "schema_version": "shield.receipt.v1"
+}
