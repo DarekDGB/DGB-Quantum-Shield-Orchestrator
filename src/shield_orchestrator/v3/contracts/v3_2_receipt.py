@@ -32,6 +32,23 @@ SUPPORTED_EVIDENCE_FAMILIES = (
     "receipt_context",
     "final_policy",
 )
+FORBIDDEN_METADATA_AUTHORITY_KEYS = frozenset({
+    "allow",
+    "approved",
+    "authority",
+    "auto_approve",
+    "broadcast",
+    "bypass",
+    "can_sign",
+    "decision",
+    "execute",
+    "final_approval",
+    "force_allow",
+    "human_approved",
+    "override",
+    "sign",
+    "trusted",
+})
 
 COMPONENT_REASON_IDS = {
     "guardian_wallet": (
@@ -147,13 +164,25 @@ def _require_hash(value: str, *, field: str) -> str:
         int(value, 16)
     except ValueError as exc:
         raise ValueError(f"{field} must be sha256 hex") from exc
-    return value.lower()
+    if value != value.lower():
+        raise ValueError(f"{field} must be lowercase sha256 hex")
+    return value
 
 
 def _require_non_empty_str(value: Any, *, field: str) -> str:
     if not isinstance(value, str) or not value.strip():
         raise ValueError(f"{field} must be non-empty str")
     return value.strip()
+
+
+def _contains_forbidden_metadata_authority(value: Any) -> bool:
+    if isinstance(value, dict):
+        if set(value) & FORBIDDEN_METADATA_AUTHORITY_KEYS:
+            return True
+        return any(_contains_forbidden_metadata_authority(item) for item in value.values())
+    if isinstance(value, list):
+        return any(_contains_forbidden_metadata_authority(item) for item in value)
+    return False
 
 
 def build_manifest() -> dict[str, Any]:
@@ -212,6 +241,8 @@ def validate_component_verdict(verdict: dict[str, Any], *, expected_context_hash
             raise ValueError("unknown component evidence family")
     if not isinstance(verdict["metadata"], dict):
         raise ValueError("metadata must be dict")
+    if _contains_forbidden_metadata_authority(verdict["metadata"]):
+        raise ValueError("component metadata contains forbidden authority field")
     return dict(verdict)
 
 
@@ -223,6 +254,8 @@ def _classify(verdicts: list[dict[str, Any]]) -> tuple[str, list[str], dict[str,
         return "DENY", ["ORCH_ERROR_INVALID_COMPONENT_VERDICT"], {"handoff_allowed": False, "handoff_reason": "ORCH_ERROR_INVALID_COMPONENT_VERDICT"}
     if "ESCALATE" in decisions:
         return "HUMAN_REVIEW_REQUIRED", ["ORCH_HUMAN_REVIEW_ESCALATE_PRESENT"], {"handoff_allowed": False, "handoff_reason": "ORCH_HUMAN_REVIEW_ESCALATE_PRESENT"}
+    if "SKIPPED" in decisions:
+        return "DENY", ["ORCH_ERROR_MISSING_REQUIRED_VERDICT"], {"handoff_allowed": False, "handoff_reason": "ORCH_ERROR_MISSING_REQUIRED_VERDICT"}
     return "ALLOW", ["ORCH_OK_ALL_COMPONENTS_ALLOW"], {"handoff_allowed": True, "handoff_reason": "ORCH_OK_ALL_COMPONENTS_ALLOW"}
 
 
