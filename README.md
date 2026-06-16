@@ -15,7 +15,7 @@
 
 **DigiByte Quantum Shield Orchestrator v3.2.0** is the deterministic aggregation and receipt boundary for the **DigiByte Quantum Shield**.
 
-The Orchestrator consumes component evidence from Shield layers, validates it, aggregates it deterministically, and produces the single Shield receipt that AdamantineOS may consume.
+The Orchestrator consumes validated Shield component verdicts, aggregates them deterministically, and produces the single Shield receipt that AdamantineOS may consume.
 
 The Orchestrator is responsible for:
 
@@ -112,7 +112,7 @@ A Shield `ALLOW` is **not** final signing or execution approval.
 
 ## v3.2.0 Receipt Lock
 
-The v3.2.0 upgrade adds the manifest / verdict / receipt integration boundary required before AdamantineOS integration.
+The v3.2.0 upgrade adds the manifest, verdict, and receipt integration boundary required before AdamantineOS integration.
 
 The Orchestrator receipt lock enforces:
 
@@ -133,6 +133,26 @@ See:
 - `docs/v3/TEST_MATRIX.md`
 - `docs/v3/PROOF_PACK.md`
 - `docs/v3/ADAMANTINEOS_HANDOFF.md`
+
+---
+
+## Step 8.3 Hardening Status
+
+Step 8.3 closes the audit finding that the Orchestrator receipt path could rely on OK-returning bridge stubs instead of real component verdict input.
+
+The Orchestrator handoff path now requires explicit component input under:
+
+```text
+payload.component_inputs
+```
+
+Those component inputs are converted into strict Shield v3.2 component verdicts and then assembled into the single AdamantineOS handoff receipt.
+
+If component input is missing, unavailable, malformed, or contains authority-bypass fields, the Orchestrator fails closed and records the affected component as an `ERROR` verdict.
+
+For AdamantineOS handoff, integrators must pass the intended AdamantineOS context hash into the Orchestrator request payload. The resulting Shield receipt remains evidence only. AdamantineOS still performs its own deterministic checks and final local policy gates.
+
+This hardening does **not** add signing authority, broadcasting authority, private-key custody, consensus authority, or autonomous execution approval.
 
 ---
 
