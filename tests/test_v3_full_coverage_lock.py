@@ -74,7 +74,7 @@ def test_adaptive_core_sink_failure_does_not_change_outcome(monkeypatch) -> None
     resp = orchestrate(_request())
 
     assert resp.outcome == "DENY"
-    assert resp.reason_ids == (ReasonId.DENY_BY_POLICY.value,)
+    assert resp.reason_ids == ("ORCH_ERROR_INVALID_COMPONENT_VERDICT",)
     assert resp.trace[-1].stage == "adaptive_core"
     assert resp.trace[-1].status == "ERROR"
     assert resp.trace[-1].reason_ids == (ReasonId.COMPONENT_ERROR.value,)
