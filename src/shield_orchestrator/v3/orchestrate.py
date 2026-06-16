@@ -1,9 +1,16 @@
 from __future__ import annotations
 
 from dataclasses import asdict
+from typing import Any
 
 from shield_orchestrator.bridges.adaptive_core_bridge import AdaptiveCoreBridge
 from shield_orchestrator.bridges.adn_bridge import ADNBridge
+from shield_orchestrator.bridges.component_verdicts import (
+    ComponentBridgeResult,
+    error_component_result,
+    receipt_context_hash,
+    receipt_request_id,
+)
 from shield_orchestrator.bridges.dqsn_bridge import DQSNBridge
 from shield_orchestrator.bridges.guardian_wallet_bridge import GuardianWalletBridge
 from shield_orchestrator.bridges.qwg_bridge import QWGBridge
@@ -13,6 +20,7 @@ from shield_orchestrator.errors import TVAError
 from .context_hash import compute_context_hash
 from .contracts.envelope import OrchestratorV3Request, OrchestratorV3Response, TraceEntry
 from .contracts.reason_ids import ReasonId
+from .contracts.v3_2_receipt import build_receipt
 from .contracts.version import CONTRACT_VERSION
 
 
@@ -20,44 +28,69 @@ def orchestrate(request: OrchestratorV3Request) -> OrchestratorV3Response:
     """
     Orchestrator v3 public entrypoint.
 
-    Phase 3 behavior:
+    Step 8.3 behavior:
     - strict request validation + contract_version gate
     - deterministic bridge calls in fixed order:
         Sentinel -> DQSN -> ADN -> Guardian Wallet -> QWG
-    - deny-by-default synthesis (DENY_BY_POLICY) until real allow/escalate logic is integrated
-    - Adaptive Core is a read-only sink and must not affect outcome
-    - hashing/serialization failures map to HASHING_FAILED (fail-closed)
+    - every bridge must return a Shield v3.2 component verdict
+    - component verdicts are assembled into the v3.2 receipt AdamantineOS consumes
+    - DENY / ERROR dominates, ESCALATE maps to human review
+    - missing component input or unavailable component package yields ERROR verdict,
+      not an all-ALLOW stub
+    - Adaptive Core remains a read-only sink and must not affect outcome
     """
     try:
         _validate_request(request)
+        try:
+            request_id = receipt_request_id(request)
+            context_hash = receipt_context_hash(request)
+        except TypeError as e:
+            raise TVAError(ReasonId.HASHING_FAILED.value, "hashing failed") from e
+        except ValueError as e:
+            raise TVAError(ReasonId.INVALID_REQUEST.value, "invalid request context") from e
 
         trace: list[TraceEntry] = [
             TraceEntry(stage="input_validation", component="orchestrator", status="OK")
         ]
+        component_verdicts: list[dict[str, Any]] = []
 
-        # Fixed, deterministic bridge order (no order dependence)
         try:
-            trace.append(SentinelBridge().evaluate_v3(request))
-            trace.append(DQSNBridge().evaluate_v3(request))
-            trace.append(ADNBridge().evaluate_v3(request))
-            trace.append(GuardianWalletBridge().evaluate_v3(request))
-            trace.append(QWGBridge().evaluate_v3(request))
+            for bridge in (
+                SentinelBridge(),
+                DQSNBridge(),
+                ADNBridge(),
+                GuardianWalletBridge(),
+                QWGBridge(),
+            ):
+                result = bridge.evaluate_v3(request)
+                normalized = _normalize_bridge_result(
+                    result,
+                    bridge_component=str(getattr(bridge, "COMPONENT", "unknown")),
+                    request_id=request_id,
+                    context_hash=context_hash,
+                )
+                trace.append(normalized.trace)
+                component_verdicts.append(normalized.verdict)
         except TypeError as e:
-            # Most common: non-JSON-serializable payload encountered during hashing in a bridge stub.
             raise TVAError(ReasonId.HASHING_FAILED.value, "hashing failed") from e
         except Exception as e:
             raise TVAError(ReasonId.COMPONENT_ERROR.value, "component error") from e
 
-        # Phase 3 synthesis: deny-by-default (contract reason id: DENY_BY_POLICY)
-        outcome = "DENY"
-        reason_ids = (ReasonId.DENY_BY_POLICY.value,)
+        receipt = build_receipt(
+            request_id=request_id,
+            context_hash=context_hash,
+            component_verdicts=component_verdicts,
+        )
+        outcome, reason_ids = _response_from_receipt(receipt)
 
         trace.append(
             TraceEntry(
-                stage="final_synthesis",
-                component="orchestrator",
-                status="DENY",
+                stage="receipt_synthesis",
+                component="shield_orchestrator",
+                status="OK" if outcome != "DENY" else "DENY",
                 reason_ids=reason_ids,
+                component_context_hash=str(receipt["receipt_hash"]),
+                notes="v3_2_receipt_built_from_component_verdicts",
             )
         )
 
@@ -77,15 +110,15 @@ def orchestrate(request: OrchestratorV3Request) -> OrchestratorV3Response:
 
         full_trace = tuple(trace + [sink_entry])
 
-        # Hash the full request material (including payload). If it fails -> HASHING_FAILED.
         try:
-            hash_material = {
-                "request": _request_for_hash(request, include_payload=True),
-                "outcome": outcome,
-                "reason_ids": list(reason_ids),
-                "trace": [asdict(t) for t in full_trace],
-            }
-            context_hash = compute_context_hash(hash_material)
+            compute_context_hash(
+                {
+                    "receipt_hash": receipt["receipt_hash"],
+                    "outcome": outcome,
+                    "reason_ids": list(reason_ids),
+                    "trace": [asdict(t) for t in full_trace],
+                }
+            )
         except TypeError as e:
             raise TVAError(ReasonId.HASHING_FAILED.value, "hashing failed") from e
 
@@ -95,6 +128,7 @@ def orchestrate(request: OrchestratorV3Request) -> OrchestratorV3Response:
             context_hash=context_hash,
             reason_ids=reason_ids,
             trace=full_trace,
+            receipt=receipt,
         )
 
     except TVAError as e:
@@ -153,7 +187,40 @@ def orchestrate(request: OrchestratorV3Request) -> OrchestratorV3Response:
         )
 
 
-def _request_for_hash(request: OrchestratorV3Request, *, include_payload: bool) -> dict:
+def _normalize_bridge_result(
+    result: Any,
+    *,
+    bridge_component: str,
+    request_id: str,
+    context_hash: str,
+) -> ComponentBridgeResult:
+    if isinstance(result, ComponentBridgeResult):
+        return result
+    if isinstance(result, TraceEntry):
+        # Legacy or monkeypatched bridge returned a trace but no component verdict.
+        # That is no longer sufficient for receipt synthesis, so convert to an
+        # explicit ERROR component verdict instead of silently accepting OK.
+        if bridge_component in {"adn", "dqsn", "guardian_wallet", "qwg", "sentinel_ai"}:
+            return error_component_result(
+                component_id=bridge_component,
+                request_id=request_id,
+                context_hash=context_hash,
+                note="bridge_returned_trace_without_verdict",
+            )
+    raise ValueError("component bridge must return ComponentBridgeResult")
+
+
+def _response_from_receipt(receipt: dict[str, Any]) -> tuple[str, tuple[str, ...]]:
+    final_outcome = str(receipt["final_outcome"])
+    reason_ids = tuple(str(item) for item in receipt["dominant_reason_ids"])
+    if final_outcome == "ALLOW":
+        return "ALLOW", reason_ids
+    if final_outcome == "HUMAN_REVIEW_REQUIRED":
+        return "ESCALATE", reason_ids
+    return "DENY", reason_ids
+
+
+def _request_for_hash(request: OrchestratorV3Request, *, include_payload: bool) -> dict[str, Any]:
     """
     Deterministic request material for hashing.
 
