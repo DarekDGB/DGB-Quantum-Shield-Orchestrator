@@ -1,48 +1,77 @@
 from __future__ import annotations
 
-from dataclasses import asdict
+from typing import Any, Mapping
 
 from .base_layer import BaseLayer
-from shield_orchestrator.v3.context_hash import compute_context_hash
-from shield_orchestrator.v3.contracts.envelope import OrchestratorV3Request, TraceEntry
+from .component_verdicts import (
+    ComponentBridgeResult,
+    build_component_result_from_response,
+    component_input,
+    error_component_result,
+    receipt_context_hash,
+    receipt_request_id,
+)
+from shield_orchestrator.v3.contracts.envelope import OrchestratorV3Request
 
 
 class SentinelBridge(BaseLayer):
-    """
-    Sentinel bridge (integration adapter).
+    """Sentinel AI bridge for Shield v3.2 receipt synthesis.
 
-    - Keeps legacy BaseLayer.process() behavior for pipeline.py (v2 testnet flow).
-    - Adds a v3-facing method that emits a deterministic TraceEntry
-      which Orchestrator v3 can aggregate.
-
-    NOTE (Phase 3 in-progress):
-    This is a stub adapter that does not yet call an external Sentinel AI v3 service/repo.
-    It is intentionally deterministic and fail-closed-ready.
+    The bridge no longer emits an OK stub. It requires explicit Sentinel input,
+    calls the real SentinelV3 engine when the component package is installed,
+    translates the engine output into the v3.2 component reason namespace, and
+    fails closed with an ERROR component verdict when unavailable or malformed.
     """
 
     COMPONENT = "sentinel_ai"
-    STAGE = "sentinel_ai"
+    ENGINE_COMPONENT = "sentinel"
 
-    def evaluate_v3(self, request: OrchestratorV3Request) -> TraceEntry:
-        """
-        Evaluate Sentinel AI for a v3 orchestrator request.
+    def evaluate_v3(self, request: OrchestratorV3Request) -> ComponentBridgeResult:
+        request_id = receipt_request_id(request)
+        context_hash = receipt_context_hash(request)
+        payload = component_input(request, self.COMPONENT)
+        if payload is None:
+            return error_component_result(
+                component_id=self.COMPONENT,
+                request_id=request_id,
+                context_hash=context_hash,
+                note="missing_component_input",
+            )
+        try:
+            response = self._evaluate_engine(payload, request_id=request_id)
+        except Exception:
+            return error_component_result(
+                component_id=self.COMPONENT,
+                request_id=request_id,
+                context_hash=context_hash,
+                note="component_engine_unavailable_or_failed",
+            )
+        return build_component_result_from_response(
+            component_id=self.COMPONENT,
+            request_id=request_id,
+            context_hash=context_hash,
+            engine_response=response,
+        )
 
-        Returns a deterministic TraceEntry. In Phase 3, this will be replaced
-        with a real call + strict validation of Sentinel AI v3 output.
-        """
-        # Deterministic per-component context hash (no hidden inputs).
-        component_context_hash = compute_context_hash(
-            {
-                "component": self.COMPONENT,
-                "request": asdict(request),
+    def _evaluate_engine(self, payload: Mapping[str, Any], *, request_id: str) -> Mapping[str, Any]:
+        from sentinel_ai_v2.config import CircuitBreakerThresholds
+        from sentinel_ai_v2.v3 import SentinelV3
+
+        engine_request = self._engine_request(payload, request_id=request_id)
+        return SentinelV3(thresholds=CircuitBreakerThresholds()).evaluate(engine_request)
+
+    def _engine_request(self, payload: Mapping[str, Any], *, request_id: str) -> dict[str, Any]:
+        if "contract_version" in payload:
+            req = dict(payload)
+        else:
+            req = {
+                "contract_version": 3,
+                "component": self.ENGINE_COMPONENT,
+                "request_id": request_id,
+                "telemetry": dict(payload.get("telemetry", payload)),
+                "constraints": dict(payload.get("constraints", {})) if isinstance(payload.get("constraints", {}), Mapping) else {},
             }
-        )
-
-        return TraceEntry(
-            stage=self.STAGE,
-            component=self.COMPONENT,
-            status="OK",
-            reason_ids=(),
-            component_context_hash=component_context_hash,
-            notes="phase3_bridge_stub",
-        )
+        req["contract_version"] = 3
+        req["component"] = self.ENGINE_COMPONENT
+        req["request_id"] = request_id
+        return req
