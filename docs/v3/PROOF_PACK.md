@@ -90,3 +90,19 @@ Before v3.2.0 tag:
 - documentation must match tests
 - CI must be green
 - 100% coverage must remain enforced
+
+---
+
+## Step 8.3 Proof Pack Additions
+
+| Invariant | Test |
+|---|---|
+| Real component outputs are translated into v3.2 receipt verdicts | `test_step8_3_real_component_outputs_build_v3_2_receipt` |
+| Component DENY dominates the receipt and Orchestrator response | `test_step8_3_component_deny_dominates_receipt` |
+| Component-internal reason codes are translated to receipt reason codes | `test_step8_3_component_internal_reason_codes_are_translated` |
+| Component authority-bypass output fails closed | `test_step8_3_component_authority_bypass_fails_closed` |
+| Missing component input fails closed and cannot become an OK stub | `test_step8_3_missing_component_input_fails_closed_not_allow_stub` |
+
+Step 8.3 closes the integration-maturity gap where bridge traces could be
+mistaken for live component contribution. AdamantineOS still consumes only the
+Orchestrator receipt.
