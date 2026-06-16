@@ -82,3 +82,41 @@ The exact hashing definition is fixed by CONTRACT.md.
 ## License
 
 MIT DarekDGB 2025
+
+---
+
+## 6. Receipt Output
+
+The v3 response may include:
+
+- `receipt: dict | None`
+
+When present, `receipt` is the canonical Shield v3.2 `shield.receipt.v1`
+artifact consumed by AdamantineOS. It is built only from validated component
+verdicts. It is not built from bridge traces alone.
+
+A bridge result without a component verdict is treated as fail-closed and cannot
+produce an ALLOW receipt.
+
+## 7. Component Inputs
+
+For live component evaluation, callers provide explicit component input under:
+
+```json
+{
+  "payload": {
+    "request_id": "req-...",
+    "context_hash": "<adamantineos-context-hash>",
+    "component_inputs": {
+      "sentinel_ai": {},
+      "dqsn": {},
+      "adn": {},
+      "guardian_wallet": {},
+      "qwg": {}
+    }
+  }
+}
+```
+
+Missing component input fails closed as a component `ERROR` verdict. The
+Orchestrator must never silently substitute an OK stub for a missing component.
