@@ -149,3 +149,35 @@ Adaptive Core v3 is an **upgrade oracle**:
 ## License
 
 MIT DarekDGB 2025
+
+---
+
+## Step 8.3 — Real Component Receipt Wiring
+
+The v3 Orchestrator no longer treats bridge output as deterministic OK stubs.
+For the AdamantineOS handoff path, each bridge must provide a Shield v3.2
+`shield.verdict.v1` component verdict. The Orchestrator then builds the single
+`shield.receipt.v1` receipt from those verdicts.
+
+Required bridge behavior:
+
+- explicit component input is required in `payload.component_inputs`
+- missing component input produces a component `ERROR` verdict
+- unavailable component packages produce a component `ERROR` verdict
+- real component engine responses are translated into the v3.2 receipt reason-code namespace
+- component internal reason codes are evidence only and must not appear as receipt reason IDs
+- raw component outputs are never AdamantineOS handoff artifacts
+- no bridge may emit an all-ALLOW stub receipt
+
+Supported component input keys:
+
+- `sentinel_ai` / `sentinel`
+- `dqsn` / `dqs_network`
+- `adn`
+- `guardian_wallet` / `guardian`
+- `qwg`
+
+AdamantineOS callers SHOULD pass the AdamantineOS context hash into the
+Orchestrator request payload as `context_hash`, `expected_context_hash`, or
+`adamantine_context_hash`. The Orchestrator binds every component verdict and
+the final receipt to that hash.
