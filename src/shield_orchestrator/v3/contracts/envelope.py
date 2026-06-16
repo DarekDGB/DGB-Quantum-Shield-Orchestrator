@@ -48,6 +48,7 @@ class OrchestratorV3Response:
     outcome: Outcome
     reason_ids: tuple[str, ...]
     trace: tuple[TraceEntry, ...]
+    receipt: dict[str, Any] | None = None
 
     @staticmethod
     def deny(
