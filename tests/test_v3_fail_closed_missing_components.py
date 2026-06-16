@@ -15,4 +15,5 @@ def test_v3_denies_by_default_when_wired_phase3() -> None:
     resp = orchestrate(req)
 
     assert resp.outcome == "DENY"
-    assert "DENY_BY_POLICY" in resp.reason_ids
+    assert "ORCH_ERROR_INVALID_COMPONENT_VERDICT" in resp.reason_ids
+    assert resp.receipt is not None
