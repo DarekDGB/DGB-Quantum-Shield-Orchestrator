@@ -1,57 +1,28 @@
-# 🧩 Shield Orchestrator — Design v2
+# Shield Orchestrator — Legacy Design v2 Archive
 
-Author: **DarekDGB**  
-AI Engineering Assistant: **Angel**  
+Author attribution: **DarekDGB**  
 License: MIT
 
 ---
 
-## Purpose
+## Status
 
-The orchestrator is the “central nervous system” of the DigiByte Quantum Immune Shield.  
-It routes packets between layers and manages the order of execution.
+This document is an archived v2 design note. It is not the live Shield handoff contract.
 
----
+The legacy `FullShieldPipeline.process_event()` / `BaseLayer.process()` path is disabled in code because it is not a fail-closed v3.2 receipt path. It must not be used by wallet integrations, AdamantineOS integrations, or production callers.
 
-## Components
+The only supported live Orchestrator path is the Shield v3.2 receipt entrypoint:
 
-### 1. `FullShieldPipeline`
-The full execution pipeline for all six layers.
-
-### 2. Bridges
-Each bridge file provides a clean interface from the orchestrator to a layer:
-- sentinel_bridge.py  
-- dqsn_bridge.py  
-- adn_bridge.py  
-- guardian_wallet_bridge.py  
-- qwg_bridge.py  
-- adaptive_core_bridge.py  
-
-### 3. Config & Context
-
-- `config.py` stores scoring weights, thresholds.
-- `context.py` stores logging, debug and pipeline options.
-
----
-
-## Packet Types
-
-- SignalPacket  
-- NetworkRiskPacket  
-- DefenseEvent  
-- WalletRiskPacket  
-- QuantumRisk  
-- ThreatPacket  
-- ImmuneResponse  
-
----
-
-## Execution Model
-
-Each event flows like this:
-
-```
-packet = pipeline.process(event)
-return packet.final_risk, packet.immune_response
+```python
+from shield_orchestrator.v3.orchestrate import orchestrate
 ```
 
+Integrators must provide explicit `payload.component_inputs`. Missing, malformed, or unavailable component input fails closed through the v3.2 receipt path.
+
+---
+
+## Archived v2 idea
+
+The original v2 concept described a `FullShieldPipeline` that routed packets between Shield layers. That model is superseded by the v3.2 receipt boundary.
+
+Do not treat this archived v2 document as current integration guidance.
