@@ -22,6 +22,6 @@ jobs:
           python -m pip install --upgrade pip
           python -m pip install -e ".[test]"
 
-      - name: Run tests with full package coverage gate
+      - name: Run tests with committed coverage gate
         run: |
-          pytest --cov=shield_orchestrator --cov-report=term-missing --cov-fail-under=100 -q
+          pytest
