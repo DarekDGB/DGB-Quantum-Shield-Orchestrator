@@ -37,7 +37,7 @@ shield_orchestrator = ["py.typed"]
 [tool.pytest.ini_options]
 minversion = "8.0"
 testpaths = ["tests"]
-addopts = "-q"
+addopts = "--cov=shield_orchestrator --cov-report=term-missing --cov-fail-under=100 -q"
 pythonpath = ["src"]
 
 [tool.ruff]
