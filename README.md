@@ -156,6 +156,23 @@ This hardening does **not** add signing authority, broadcasting authority, priva
 
 ---
 
+## Step 9.1 Legacy Pipeline Lock
+
+The legacy `FullShieldPipeline.process_event()` and `BaseLayer.process()` paths are disabled.
+
+They are retained only as loud-failing compatibility shells so older imports do not silently receive fake Shield protection. They must not be used by wallet integrations, AdamantineOS integrations, or any production caller.
+
+The only supported Shield handoff path for v3.2 is:
+
+```python
+from shield_orchestrator.v3.orchestrate import orchestrate
+```
+
+Callers must provide explicit `payload.component_inputs`. Missing or invalid component input fails closed into a v3.2 receipt outcome, never into an unconditional all-pass result.
+
+
+---
+
 ## Repository Layout
 
 ```text
