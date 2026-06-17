@@ -120,3 +120,13 @@ For live component evaluation, callers provide explicit component input under:
 
 Missing component input fails closed as a component `ERROR` verdict. The
 Orchestrator must never silently substitute an OK stub for a missing component.
+
+---
+
+## 8. Disabled Legacy Pipeline
+
+`FullShieldPipeline.process_event()` and `BaseLayer.process()` are not public v3.2 Shield handoff APIs. They are disabled and must raise a clear error instead of returning any pass/fail decision.
+
+Integrators must use only `shield_orchestrator.v3.orchestrate.orchestrate()` with explicit `payload.component_inputs` to produce the fail-closed Shield v3.2 receipt consumed by AdamantineOS.
+
+No caller may treat a bridge-level or legacy pipeline result as live Shield protection.
