@@ -1,37 +1,32 @@
+from __future__ import annotations
+
+from .bridges.base_layer import LEGACY_PROCESS_DISABLED_MESSAGE
 from .config import ShieldConfig
 from .context import ShieldContext
-from .bridges.sentinel_bridge import SentinelBridge
-from .bridges.dqsn_bridge import DQSNBridge
-from .bridges.adn_bridge import ADNBridge
-from .bridges.guardian_wallet_bridge import GuardianWalletBridge
-from .bridges.qwg_bridge import QWGBridge
-from .bridges.adaptive_core_bridge import AdaptiveCoreBridge
+
 
 class FullShieldPipeline:
+    """
+    Deprecated legacy pipeline shell.
+
+    This class is retained only so older imports fail loudly instead of falling
+    back to a fake all-pass Shield path. The live Shield handoff API is the
+    v3.2 receipt entrypoint: shield_orchestrator.v3.orchestrate.orchestrate().
+    """
+
     def __init__(self, config=None):
         self.config = config or ShieldConfig()
         self.ctx = ShieldContext(self.config)
-
-        self.sentinel = SentinelBridge()
-        self.dqsn = DQSNBridge()
-        self.adn = ADNBridge()
-        self.guardian = GuardianWalletBridge()
-        self.qwg = QWGBridge()
-        self.adaptive = AdaptiveCoreBridge()
 
     @staticmethod
     def from_default_config():
         return FullShieldPipeline()
 
     def process_event(self, event: dict) -> dict:
-        flow = []
+        """
+        Disabled legacy v2-style entrypoint.
 
-        flow.append(self.sentinel.process(event))
-        flow.append(self.dqsn.process(event))
-        flow.append(self.adn.process(event))
-        flow.append(self.guardian.process(event))
-        flow.append(self.qwg.process(event))
-
-        immune = self.adaptive.process(event)
-
-        return {"flow": flow, "immune": immune}
+        FullShieldPipeline previously called BaseLayer.process(), which could
+        return unconditional all-pass data. That path is intentionally closed.
+        """
+        raise RuntimeError(LEGACY_PROCESS_DISABLED_MESSAGE)
