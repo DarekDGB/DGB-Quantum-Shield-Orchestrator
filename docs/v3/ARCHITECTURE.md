@@ -181,3 +181,17 @@ AdamantineOS callers SHOULD pass the AdamantineOS context hash into the
 Orchestrator request payload as `context_hash`, `expected_context_hash`, or
 `adamantine_context_hash`. The Orchestrator binds every component verdict and
 the final receipt to that hash.
+
+---
+
+## Step 9.1 — Legacy Pipeline Disabled
+
+The old `FullShieldPipeline.process_event()` / `BaseLayer.process()` path is not part of the live v3.2 receipt boundary.
+
+It is intentionally disabled so no integrator can receive an unconditional all-pass Shield result by calling a legacy convenience class. The retained class exists only to fail loudly and redirect integrators to the single supported receipt path:
+
+```python
+from shield_orchestrator.v3.orchestrate import orchestrate
+```
+
+Only the v3.2 orchestration core may synthesize the Shield handoff receipt from validated component verdicts.
