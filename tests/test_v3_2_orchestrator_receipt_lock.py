@@ -75,6 +75,19 @@ def test_v3_2_receipt_is_deterministic_and_orders_components():
     assert validate_receipt(receipt_a, expected_context_hash=CTX) == receipt_a
 
 
+def test_v3_2_receipt_hash_vector_stays_stable_with_strict_json_nan_lock():
+    receipt = build_receipt(request_id="req-1", context_hash=CTX, component_verdicts=all_verdicts())
+
+    assert receipt["receipt_hash"] == "c282da0d9aa6587116271012f82b2399974c0cbfd82dcb7a9545bcb957b4bdfc"
+    assert canonical_sha256({"ok": True, "n": 1, "s": "DigiByte"}) == "57191193452bcc05c491b175f9778d9aab8d1d6829fcf55756f1e0ea77967c14"
+
+
+def test_v3_2_receipt_hash_rejects_non_finite_json_numbers():
+    for value in (float("nan"), float("inf"), float("-inf")):
+        with pytest.raises(ValueError, match="Out of range float values"):
+            canonical_sha256({"non_finite": value})
+
+
 @pytest.mark.parametrize(
     ("decision", "outcome", "handoff"),
     [
@@ -83,6 +96,9 @@ def test_v3_2_receipt_is_deterministic_and_orders_components():
         ("ESCALATE", "HUMAN_REVIEW_REQUIRED", False),
     ],
 )
+
+
+
 def test_v3_2_receipt_policy_deny_and_escalate(decision, outcome, handoff):
     verdicts = all_verdicts()
     verdicts[0] = verdict(SUPPORTED_COMPONENTS[0], decision)
