@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import importlib
 import os
 from typing import Any, Mapping
 
@@ -35,11 +36,16 @@ def _symbols() -> dict[str, Any]:
     from shield_orchestrator.v3.orchestrate import orchestrate
 
     # These imports intentionally prove the workflow co-installed the real engines.
-    pytest.importorskip("sentinel_ai_v2.v3")
-    pytest.importorskip("adn_v3")
-    pytest.importorskip("dqsnetwork.v3_api")
-    pytest.importorskip("dgb_wallet_guardian")
-    pytest.importorskip("qwg")
+    # Do not use skip-on-import helpers here: the live proof must fail, not skip,
+    # when ADAMANTINEOS_LIVE_SHIELD_INTEGRATION=1 and any component is absent.
+    for module_name in (
+        "sentinel_ai_v2.v3",
+        "adn_v3",
+        "dqsnetwork.v3_api",
+        "dgb_wallet_guardian",
+        "qwg",
+    ):
+        importlib.import_module(module_name)
 
     return {
         "ExternalReasonMap": ExternalReasonMap,
