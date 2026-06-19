@@ -72,4 +72,31 @@ jobs:
           ADAMANTINEOS_LIVE_SHIELD_INTEGRATION: "1"
         working-directory: orchestrator
         run: |
-          python -m pytest tests/live/test_step11_2_real_component_integration.py -q -o addopts=""
+          python -m pytest tests/live/test_step11_2_real_component_integration.py -q -o addopts="" --junitxml=live-shield-integration-results.xml
+
+      - name: Assert live proof was not skipped
+        working-directory: orchestrator
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          import xml.etree.ElementTree as ET
+
+          report = Path("live-shield-integration-results.xml")
+          if not report.exists():
+              raise SystemExit("missing live integration JUnit report")
+
+          root = ET.parse(report).getroot()
+          testcases = root.findall(".//testcase")
+          skipped = root.findall(".//skipped")
+          failures = root.findall(".//failure")
+          errors = root.findall(".//error")
+
+          if not testcases:
+              raise SystemExit("live integration proof collected zero tests")
+          if skipped:
+              raise SystemExit(f"live integration proof skipped {len(skipped)} test(s)")
+          if failures or errors:
+              raise SystemExit("live integration proof reported failures or errors")
+
+          print(f"live integration proof executed {len(testcases)} test(s) with zero skips")
+          PY
