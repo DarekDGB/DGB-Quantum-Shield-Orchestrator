@@ -1,0 +1,75 @@
+name: Shield Live Integration
+
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  live-shield-integration:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Orchestrator
+        uses: actions/checkout@v4
+        with:
+          path: orchestrator
+
+      - name: Checkout Sentinel AI
+        uses: actions/checkout@v4
+        with:
+          repository: DarekDGB/DGB-Sentinel-AI
+          path: components/DGB-Sentinel-AI
+
+      - name: Checkout ADN
+        uses: actions/checkout@v4
+        with:
+          repository: DarekDGB/DigiByte-ADN
+          path: components/DigiByte-ADN
+
+      - name: Checkout DQSN
+        uses: actions/checkout@v4
+        with:
+          repository: DarekDGB/DigiByte-Quantum-Shield-Network
+          path: components/DigiByte-Quantum-Shield-Network
+
+      - name: Checkout Wallet Guardian
+        uses: actions/checkout@v4
+        with:
+          repository: DarekDGB/DGB-Wallet-Guardian
+          path: components/DGB-Wallet-Guardian
+
+      - name: Checkout QWG
+        uses: actions/checkout@v4
+        with:
+          repository: DarekDGB/DGB-Quantum-Wallet-Guard
+          path: components/DGB-Quantum-Wallet-Guard
+
+      - name: Checkout AdamantineOS
+        uses: actions/checkout@v4
+        with:
+          repository: DarekDGB/DigiByte-AdamantineOS
+          path: components/DigiByte-AdamantineOS
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install live integration packages
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install -e "components/DGB-Sentinel-AI[dev]"
+          python -m pip install -e "components/DigiByte-ADN[test]"
+          python -m pip install -e "components/DigiByte-Quantum-Shield-Network[test]"
+          python -m pip install -e "components/DGB-Wallet-Guardian[test]"
+          python -m pip install -e "components/DGB-Quantum-Wallet-Guard[test]"
+          python -m pip install -e "components/DigiByte-AdamantineOS[dev]"
+          python -m pip install -e "orchestrator[test]"
+
+      - name: Run real Shield component integration proof
+        env:
+          ADAMANTINEOS_LIVE_SHIELD_INTEGRATION: "1"
+        working-directory: orchestrator
+        run: |
+          python -m pytest tests/live/test_step11_2_real_component_integration.py -q -o addopts=""
