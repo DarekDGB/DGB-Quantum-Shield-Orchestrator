@@ -1,0 +1,399 @@
+# Shield v4 PQC Contract Invariants
+
+Author attribution: DarekDGB
+
+## Status
+
+This document locks pre-implementation invariants for Shield v4 PQC work.
+
+Baseline tag: `ecosystem-pre-v4-audit-lock`
+
+This is not a Shield v4 release and does not add cryptographic code.
+
+## Single Source of Truth Rule
+
+For Shield v4, tests and contract documents define truth.
+
+If implementation code conflicts with these invariants, the implementation is wrong.
+
+If a future implementation cannot satisfy an invariant, the build must stop and the contract must be reviewed before any signing code is produced.
+
+## V4-INV-001 — Evidence Only
+
+Shield v4 produces cryptographically verifiable decision evidence only.
+
+It must not sign transactions, broadcast transactions, hold transaction keys, alter DigiByte consensus, or grant final execution authority.
+
+## V4-INV-002 — AdamantineOS Final Boundary
+
+AdamantineOS remains the final execution boundary.
+
+No Shield component, Orchestrator receipt, wallet field, AI output, metadata field, or signature policy may override AdamantineOS final policy.
+
+## V4-INV-003 — Parallel v4 Surface
+
+Shield v4 must be built as a parallel v4 contract surface.
+
+Existing v3 schemas remain intact:
+
+- `shield.verdict.v1`
+- `shield.receipt.v1`
+
+Planned v4 schemas are:
+
+- `shield.verdict.v2`
+- `shield.receipt.v2`
+- `shield.signature_bundle.v1`
+- `shield.key_registry.v1`
+
+A v3 receipt submitted where v4 is required must fail closed.
+
+## V4-INV-004 — Canonicalization Profile
+
+The Shield v4 canonicalization profile is `shield-v4-canon.v1`.
+
+Signed payload canonicalization must use:
+
+- UTF-8 encoding only
+- Unicode NFC normalization before serialization
+- JSON object keys sorted lexicographically by Unicode code point
+- compact JSON separators with no insignificant whitespace
+- deterministic escaping only
+- `allow_nan=false` behavior
+- no floats in signed fields
+- no NaN or Infinity values
+- integers encoded as exact JSON integers only
+- no leading zero numeric encodings outside the value `0`
+- no plus signs in numeric encodings
+- absent optional fields omitted from signed payloads
+- `null` rejected for signed fields unless a future schema explicitly permits it
+- arrays ordered only by schema-defined rules
+- set-valued fields serialized as sorted unique lists
+- duplicate keys rejected before canonicalization
+- `signature_bundle` excluded from the payload it signs
+- `signed_payload_hash` excluded from the payload it signs
+
+Field sets must be schema-defined and versioned. Unrecognized signed fields fail closed.
+
+Known-Answer Test vectors must freeze canonical bytes before v4 is called locked.
+
+## V4-INV-005 — Deterministic Field Ordering Rules
+
+Component verdict ordering inside an Orchestrator receipt must be canonical and schema-defined.
+
+Required component order for v4 receipt construction:
+
+1. `adn`
+2. `dqsn`
+3. `guardian_wallet`
+4. `qwg`
+5. `sentinel_ai`
+
+Evidence families are set-valued and must be serialized as sorted unique lists.
+
+Reason IDs are policy-ordered tuples. Caller-provided reason ID order is not authoritative.
+
+Duplicate component verdicts, duplicate evidence families, or duplicate signature entries fail closed.
+
+## V4-INV-006 — Domain Separation
+
+Component verdict signatures and Orchestrator receipt signatures must use different signed domains.
+
+Component verdict domain tag:
+
+```text
+DGB-SHIELD-V4-COMPONENT-VERDICT:shield.verdict.v2:policy.v1
+```
+
+Orchestrator receipt domain tag:
+
+```text
+DGB-SHIELD-V4-ORCH-RECEIPT:shield.receipt.v2:policy.v1
+```
+
+The domain tag is part of the signed bytes.
+
+A signature valid under one domain must fail under every other domain.
+
+## V4-INV-007 — Signed Payload Hash
+
+Every signature in a v4 signature bundle must verify against the same domain-separated `signed_payload_hash`.
+
+The `signed_payload_hash` must be computed from:
+
+1. domain tag
+2. canonical signed payload bytes
+
+The signature fields themselves are never part of the payload being signed.
+
+## V4-INV-008 — Signed Freshness
+
+Every signed component verdict and signed Orchestrator receipt must include signed freshness fields:
+
+- `request_id`
+- `freshness_nonce`
+- `not_before`
+- `not_after`
+
+The verifier must reject:
+
+- missing freshness fields
+- unsigned freshness fields
+- stale receipts
+- future receipts
+- duplicate `request_id` / `freshness_nonce` pairs inside the freshness window
+- changed freshness fields after signing
+
+Freshness rejection is DENY, not warn.
+
+## V4-INV-009 — Key Roles
+
+Shield v4 key roles are separate from Q-ID identity keys.
+
+Required Shield v4 roles:
+
+- `shield_component_adn`
+- `shield_component_dqsn`
+- `shield_component_guardian_wallet`
+- `shield_component_qwg`
+- `shield_component_sentinel_ai`
+- `shield_orchestrator`
+
+Q-ID keys prove identity / authentication.
+
+Shield keys prove decision evidence.
+
+Orchestrator keys prove final Shield aggregation evidence.
+
+A key authorized for one role must fail closed when used for another role.
+
+## V4-INV-010 — Key Lifecycle
+
+Every signature entry must carry:
+
+- `key_id`
+- `key_version`
+- `algorithm`
+
+Every key registry entry must carry:
+
+- `role`
+- `key_id`
+- `key_version`
+- `algorithm`
+- `not_before`
+- `not_after`
+- `status`
+
+Valid statuses:
+
+- `active`
+- `revoked`
+
+A key must be active and inside its validity window at verification time.
+
+The signed artifact must also have been produced inside the key validity window.
+
+Revoked keys fail closed.
+
+Expired keys fail closed.
+
+Unknown keys fail closed.
+
+Trust-registry rollback that re-activates a revoked key fails closed.
+
+## V4-INV-011 — Versioned Signature Policy
+
+The first Shield v4 signature policy is `policy.v1`.
+
+`policy.v1` requires:
+
+- an approved classical signature path
+- an approved ML-DSA signature path
+
+`policy.v1` may include FN-DSA as supplemental evidence.
+
+ML-DSA means ML-DSA, formerly CRYSTALS-Dilithium.
+
+FN-DSA means FN-DSA, based on Falcon.
+
+FN-DSA must never satisfy or override a missing or failed ML-DSA requirement.
+
+The embedded `signature_policy` must be covered by the signature.
+
+The verifier-required policy is authoritative. If the embedded policy is weaker than the verifier-required policy, verification fails closed.
+
+## V4-INV-012 — Signature Bundle Binding
+
+A v4 signature bundle must not be malleable.
+
+Rules:
+
+- all required signatures sign the same `signed_payload_hash`
+- all required signatures are evaluated
+- no first-valid-wins behavior
+- duplicate algorithm entries fail closed
+- duplicate key entries fail closed
+- unknown algorithms fail closed
+- unsupported algorithms fail closed
+- wrong role fails closed
+- wrong key id fails closed
+- wrong key version fails closed
+- wrong policy fails closed
+- cross-receipt signature splicing fails closed
+
+## V4-INV-013 — Algorithm Naming Accuracy
+
+ML-DSA and FN-DSA are separate algorithms.
+
+ML-DSA was formerly CRYSTALS-Dilithium.
+
+FN-DSA is based on Falcon.
+
+Documentation, tests, fixtures, and code must not describe FN-DSA / Falcon as ML-DSA.
+
+If legacy identifiers are supported for compatibility, their mapping must be explicit, tested, and fail closed on ambiguity.
+
+## V4-INV-014 — Metadata Is Never Authority
+
+Metadata is evidence only.
+
+Metadata must not grant:
+
+- approval
+- final authority
+- signing permission
+- broadcast permission
+- bypass permission
+- trusted status
+- execution permission
+
+Forbidden authority keys must be rejected recursively, including inside nested metadata objects.
+
+## V4-INV-015 — AdamantineOS Handoff Discipline
+
+AdamantineOS may consume only the Shield Orchestrator receipt.
+
+AdamantineOS must not consume raw component verdicts directly.
+
+`handoff_allowed` is evidence only. It is not final approval.
+
+A forged, unsigned, or tampered `handoff_allowed` field fails closed.
+
+## V4-INV-016 — External / Wallet Verifier Boundary
+
+The wallet is not the initial Shield v4 cryptographic verification boundary.
+
+The wallet must not treat unverified Shield receipts as verified.
+
+The wallet must not gain execution authority from Shield receipts.
+
+A future external verifier must use a frozen external verification contract and frozen Known-Answer Test vectors before integration.
+
+## V4-INV-017 — Known-Answer Test Vectors
+
+Before v4 is called locked, the repository must contain frozen test-only vectors covering:
+
+- input payload
+- canonical bytes
+- domain tag
+- signed payload hash
+- key id
+- key version
+- algorithm
+- signature bundle
+- expected verifier result
+
+Vectors must be deterministic and shared across Orchestrator, AdamantineOS, Shield component repositories, and any future external verifier.
+
+Test keys must be marked TEST-ONLY and must never be production keys.
+
+## V4-INV-018 — Verification Work Order
+
+Verification must reject cheap failures before expensive signature work.
+
+Required order:
+
+1. schema type and field set checks
+2. required field validation
+3. canonicalization validation
+4. hash validation
+5. signature policy validation
+6. key registry validation
+7. signature verification
+8. final handoff / AdamantineOS policy evaluation
+
+Malformed payloads must not reach expensive PQC verification.
+
+## V4-INV-019 — Dual-Stack Governance
+
+`v4-required` mode must be verifier-controlled.
+
+Untrusted upstream input must not be able to downgrade from `v4-required` to `v3-allowed`.
+
+Rollback must fail closed unless a future explicit, versioned, tested governance contract allows it.
+
+## V4-INV-020 — Verification Observability
+
+Verification must produce non-secret audit evidence suitable for incident response.
+
+Allowed audit fields:
+
+- `request_id`
+- `context_hash`
+- `policy_version`
+- `key_id`
+- `key_version`
+- `algorithm`
+- pass / fail result
+- fail-closed reason identifier
+
+Forbidden audit output:
+
+- private keys
+- wallet seeds
+- recovery phrases
+- production secret material
+- sensitive payload secrets
+
+## V4-INV-021 — Performance / DoS Envelope
+
+Before release, v4 must define:
+
+- maximum signature bundle size
+- maximum number of signatures evaluated per artifact
+- maximum component verdict count
+- maximum key-registry entries considered per verification
+- bounded per-request verification work budget
+
+Input that exceeds the envelope fails closed before cryptographic verification.
+
+## V4-INV-022 — Negative-First Lock
+
+No v4 release is locked until negative tests prove fail-closed behavior for:
+
+- missing signatures
+- wrong keys
+- wrong roles
+- unknown algorithms
+- unsupported algorithms
+- policy downgrade
+- domain mismatch
+- context mismatch
+- request mismatch
+- stale receipt
+- replayed receipt
+- registry rollback
+- revoked keys
+- expired keys
+- signature splicing
+- metadata authority injection
+- v3 downgrade where v4 is required
+
+## Final Invariant
+
+Cryptography proves Shield evidence.
+
+Cryptography does not grant execution authority.
+
+AdamantineOS remains the final boundary.
