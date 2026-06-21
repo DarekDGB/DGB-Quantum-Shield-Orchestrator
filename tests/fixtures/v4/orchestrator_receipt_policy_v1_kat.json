@@ -1,0 +1,115 @@
+{
+  "author_attribution": "DarekDGB",
+  "canonical_json": "{\"adamantineos_handoff\":{\"handoff_allowed\":true,\"handoff_reason\":\"ORCH_OK_ALL_COMPONENTS_ALLOW\"},\"canonicalization_profile\":\"shield-v4-canon.v1\",\"component_signature_results\":[{\"component_id\":\"adn\",\"verified\":true},{\"component_id\":\"dqsn\",\"verified\":true},{\"component_id\":\"guardian_wallet\",\"verified\":true},{\"component_id\":\"qwg\",\"verified\":true},{\"component_id\":\"sentinel_ai\",\"verified\":true}],\"component_verdicts\":[{\"component_id\":\"adn\",\"context_hash\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\",\"contract_version\":4,\"decision\":\"ALLOW\",\"schema_version\":\"shield.verdict.v2\"},{\"component_id\":\"dqsn\",\"context_hash\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\",\"contract_version\":4,\"decision\":\"ALLOW\",\"schema_version\":\"shield.verdict.v2\"},{\"component_id\":\"guardian_wallet\",\"context_hash\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\",\"contract_version\":4,\"decision\":\"ALLOW\",\"schema_version\":\"shield.verdict.v2\"},{\"component_id\":\"qwg\",\"context_hash\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\",\"contract_version\":4,\"decision\":\"ALLOW\",\"schema_version\":\"shield.verdict.v2\"},{\"component_id\":\"sentinel_ai\",\"context_hash\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\",\"contract_version\":4,\"decision\":\"ALLOW\",\"schema_version\":\"shield.verdict.v2\"}],\"context_hash\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\",\"contract_version\":4,\"dominant_reason_ids\":[\"ORCH_OK_ALL_COMPONENTS_ALLOW\"],\"fail_closed\":true,\"final_outcome\":\"ALLOW\",\"freshness_nonce\":\"nonce-v4-kat\",\"key_registry_version\":1,\"not_after\":\"2026-06-21T00:05:00Z\",\"not_before\":\"2026-06-21T00:00:00Z\",\"request_id\":\"req-v4-kat\",\"schema_version\":\"shield.receipt.v2\",\"signature_policy\":\"policy.v1\"}",
+  "canonicalization_profile": "shield-v4-canon.v1",
+  "domain_separated_payload_hex": "4447422d534849454c442d56342d5349474e45442d5041594c4f41440a4447422d534849454c442d56342d4f5243482d524543454950543a736869656c642e726563656970742e76323a706f6c6963792e76310a7b226164616d616e74696e656f735f68616e646f6666223a7b2268616e646f66665f616c6c6f776564223a747275652c2268616e646f66665f726561736f6e223a224f5243485f4f4b5f414c4c5f434f4d504f4e454e54535f414c4c4f57227d2c2263616e6f6e6963616c697a6174696f6e5f70726f66696c65223a22736869656c642d76342d63616e6f6e2e7631222c22636f6d706f6e656e745f7369676e61747572655f726573756c7473223a5b7b22636f6d706f6e656e745f6964223a2261646e222c227665726966696564223a747275657d2c7b22636f6d706f6e656e745f6964223a226471736e222c227665726966696564223a747275657d2c7b22636f6d706f6e656e745f6964223a22677561726469616e5f77616c6c6574222c227665726966696564223a747275657d2c7b22636f6d706f6e656e745f6964223a22717767222c227665726966696564223a747275657d2c7b22636f6d706f6e656e745f6964223a2273656e74696e656c5f6169222c227665726966696564223a747275657d5d2c22636f6d706f6e656e745f7665726469637473223a5b7b22636f6d706f6e656e745f6964223a2261646e222c22636f6e746578745f68617368223a2261616161616161616161616161616161616161616161616161616161616161616161616161616161616161616161616161616161616161616161616161616161222c22636f6e74726163745f76657273696f6e223a342c226465636973696f6e223a22414c4c4f57222c22736368656d615f76657273696f6e223a22736869656c642e766572646963742e7632227d2c7b22636f6d706f6e656e745f6964223a226471736e222c22636f6e746578745f68617368223a2261616161616161616161616161616161616161616161616161616161616161616161616161616161616161616161616161616161616161616161616161616161222c22636f6e74726163745f76657273696f6e223a342c226465636973696f6e223a22414c4c4f57222c22736368656d615f76657273696f6e223a22736869656c642e766572646963742e7632227d2c7b22636f6d706f6e656e745f6964223a22677561726469616e5f77616c6c6574222c22636f6e746578745f68617368223a2261616161616161616161616161616161616161616161616161616161616161616161616161616161616161616161616161616161616161616161616161616161222c22636f6e74726163745f76657273696f6e223a342c226465636973696f6e223a22414c4c4f57222c22736368656d615f76657273696f6e223a22736869656c642e766572646963742e7632227d2c7b22636f6d706f6e656e745f6964223a22717767222c22636f6e746578745f68617368223a2261616161616161616161616161616161616161616161616161616161616161616161616161616161616161616161616161616161616161616161616161616161222c22636f6e74726163745f76657273696f6e223a342c226465636973696f6e223a22414c4c4f57222c22736368656d615f76657273696f6e223a22736869656c642e766572646963742e7632227d2c7b22636f6d706f6e656e745f6964223a2273656e74696e656c5f6169222c22636f6e746578745f68617368223a2261616161616161616161616161616161616161616161616161616161616161616161616161616161616161616161616161616161616161616161616161616161222c22636f6e74726163745f76657273696f6e223a342c226465636973696f6e223a22414c4c4f57222c22736368656d615f76657273696f6e223a22736869656c642e766572646963742e7632227d5d2c22636f6e746578745f68617368223a2261616161616161616161616161616161616161616161616161616161616161616161616161616161616161616161616161616161616161616161616161616161222c22636f6e74726163745f76657273696f6e223a342c22646f6d696e616e745f726561736f6e5f696473223a5b224f5243485f4f4b5f414c4c5f434f4d504f4e454e54535f414c4c4f57225d2c226661696c5f636c6f736564223a747275652c2266696e616c5f6f7574636f6d65223a22414c4c4f57222c2266726573686e6573735f6e6f6e6365223a226e6f6e63652d76342d6b6174222c226b65795f72656769737472795f76657273696f6e223a312c226e6f745f6166746572223a22323032362d30362d32315430303a30353a30305a222c226e6f745f6265666f7265223a22323032362d30362d32315430303a30303a30305a222c22726571756573745f6964223a227265712d76342d6b6174222c22736368656d615f76657273696f6e223a22736869656c642e726563656970742e7632222c227369676e61747572655f706f6c696379223a22706f6c6963792e7631227d",
+  "domain_tag": "DGB-SHIELD-V4-ORCH-RECEIPT:shield.receipt.v2:policy.v1",
+  "expected_validation": "ALLOW verification succeeds only when both classical-ed25519 and ml-dsa test signatures verify under shield_orchestrator role.",
+  "policy_version": "policy.v1",
+  "receipt_hash": "4dcf7fc66317e8f06fbd24edf8c839a7ddf0d38b88b70af321cc7732d0ab46f5",
+  "schema_version": "shield.v4.kat.v1",
+  "signature_bundle": {
+    "policy_version": "policy.v1",
+    "schema_version": "shield.signature_bundle.v1",
+    "signatures": [
+      {
+        "algorithm": "classical-ed25519",
+        "domain_tag": "DGB-SHIELD-V4-ORCH-RECEIPT:shield.receipt.v2:policy.v1",
+        "key_id": "test-shield_orchestrator-classical-ed25519-v1",
+        "key_version": 1,
+        "signature": "881017e866216f1eb84d20df669a569257a39ce25d49e081052141b666f326f5",
+        "signed_payload_hash": "d4e4c277f99e9320a27a3502e3b26196638c1e4d8bdf5dcee0ad533559240ca3"
+      },
+      {
+        "algorithm": "ml-dsa",
+        "domain_tag": "DGB-SHIELD-V4-ORCH-RECEIPT:shield.receipt.v2:policy.v1",
+        "key_id": "test-shield_orchestrator-ml-dsa-v1",
+        "key_version": 1,
+        "signature": "68d35eecae0dc2db777e7a9189fb92affeaf6da05ec1f2fd8ba4d7adb1987731",
+        "signed_payload_hash": "d4e4c277f99e9320a27a3502e3b26196638c1e4d8bdf5dcee0ad533559240ca3"
+      }
+    ]
+  },
+  "signed_payload_hash": "d4e4c277f99e9320a27a3502e3b26196638c1e4d8bdf5dcee0ad533559240ca3",
+  "unsigned_payload": {
+    "adamantineos_handoff": {
+      "handoff_allowed": true,
+      "handoff_reason": "ORCH_OK_ALL_COMPONENTS_ALLOW"
+    },
+    "canonicalization_profile": "shield-v4-canon.v1",
+    "component_signature_results": [
+      {
+        "component_id": "adn",
+        "verified": true
+      },
+      {
+        "component_id": "dqsn",
+        "verified": true
+      },
+      {
+        "component_id": "guardian_wallet",
+        "verified": true
+      },
+      {
+        "component_id": "qwg",
+        "verified": true
+      },
+      {
+        "component_id": "sentinel_ai",
+        "verified": true
+      }
+    ],
+    "component_verdicts": [
+      {
+        "component_id": "adn",
+        "context_hash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "contract_version": 4,
+        "decision": "ALLOW",
+        "schema_version": "shield.verdict.v2"
+      },
+      {
+        "component_id": "dqsn",
+        "context_hash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "contract_version": 4,
+        "decision": "ALLOW",
+        "schema_version": "shield.verdict.v2"
+      },
+      {
+        "component_id": "guardian_wallet",
+        "context_hash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "contract_version": 4,
+        "decision": "ALLOW",
+        "schema_version": "shield.verdict.v2"
+      },
+      {
+        "component_id": "qwg",
+        "context_hash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "contract_version": 4,
+        "decision": "ALLOW",
+        "schema_version": "shield.verdict.v2"
+      },
+      {
+        "component_id": "sentinel_ai",
+        "context_hash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "contract_version": 4,
+        "decision": "ALLOW",
+        "schema_version": "shield.verdict.v2"
+      }
+    ],
+    "context_hash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+    "contract_version": 4,
+    "dominant_reason_ids": [
+      "ORCH_OK_ALL_COMPONENTS_ALLOW"
+    ],
+    "fail_closed": true,
+    "final_outcome": "ALLOW",
+    "freshness_nonce": "nonce-v4-kat",
+    "key_registry_version": 1,
+    "not_after": "2026-06-21T00:05:00Z",
+    "not_before": "2026-06-21T00:00:00Z",
+    "request_id": "req-v4-kat",
+    "schema_version": "shield.receipt.v2",
+    "signature_policy": "policy.v1"
+  },
+  "warning": "TEST-ONLY deterministic vector. Not production key material and not production cryptography."
+}
