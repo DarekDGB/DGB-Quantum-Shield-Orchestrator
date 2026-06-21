@@ -1,0 +1,286 @@
+# Shield v4 PQC Threat Model
+
+Author attribution: DarekDGB
+
+## Status
+
+This document is a pre-implementation threat model for Shield v4 PQC work.
+
+Baseline tag: `ecosystem-pre-v4-audit-lock`
+
+This is not a Shield v4 release and does not add cryptographic code.
+
+## Security Goal
+
+Shield v4 must make Shield decision evidence cryptographically verifiable without creating signing, broadcasting, consensus, custody, wallet, AI, or upstream execution authority.
+
+AdamantineOS remains the final execution boundary.
+
+## Protected Assets
+
+Shield v4 protects:
+
+- component verdict integrity
+- Orchestrator receipt integrity
+- context-hash binding
+- request binding
+- freshness / anti-replay binding
+- reason ID integrity
+- evidence-family integrity
+- final Shield aggregation evidence
+- key-role separation
+- trust-registry validity
+- downgrade resistance
+- auditability of verification results
+
+Shield v4 does not protect by taking custody of:
+
+- wallet private keys
+- wallet seeds
+- recovery phrases
+- transaction-signing keys
+- DigiByte consensus rules
+
+## Trust Boundaries
+
+### Shield Components
+
+Shield components produce signed decision evidence only.
+
+A component signature proves that a component role produced a verdict for a specific request, context, policy, freshness window, and payload hash.
+
+A component signature does not prove final wallet authority.
+
+### Shield Orchestrator
+
+The Orchestrator verifies signed component verdicts, aggregates them, and produces a signed Shield receipt.
+
+The Orchestrator receipt is the only Shield artifact AdamantineOS may consume.
+
+### AdamantineOS
+
+AdamantineOS verifies the Shield receipt and remains the final execution boundary.
+
+No Shield v4 field may override AdamantineOS final policy.
+
+### Wallet / External Integrator
+
+The wallet must not treat Shield v4 artifacts as final authority.
+
+The wallet should display or act on AdamantineOS final outcome only unless a future external verification contract is explicitly implemented and tested.
+
+### AI Gateway / AI Output
+
+AI output is untrusted evidence only.
+
+AI may not approve, override, downgrade, sign, broadcast, or create missing cryptographic evidence.
+
+## Adversary Model
+
+Assume an attacker may attempt to:
+
+- modify component verdicts after signing
+- modify Orchestrator receipts after signing
+- replay old valid receipts
+- submit stale receipts
+- change `context_hash` or `request_id`
+- splice a valid signature from another receipt
+- use a valid component signature as an Orchestrator signature
+- use a valid Orchestrator signature as a component signature
+- use the wrong key for a role
+- use a revoked or expired key
+- roll back the trust registry
+- weaken the signature policy
+- strip ML-DSA and present only classical signatures
+- present FN-DSA evidence as if it satisfies ML-DSA
+- duplicate algorithm entries in a signature bundle
+- include unknown algorithms
+- trigger canonicalization ambiguity
+- exploit Unicode or numeric serialization differences
+- inject authority through metadata
+- submit raw component outputs directly to AdamantineOS
+- downgrade v4-required mode to v3-allowed mode
+- flood verification with malformed PQC payloads
+- make the wallet treat unverified Shield output as verified
+
+## Out-of-Scope Attacks
+
+Shield v4 does not claim to solve:
+
+- compromise of a user's wallet private key outside Shield
+- compromise of DigiByte consensus
+- compromise of production signing key custody outside the trust-registry model
+- attacks caused by a wallet ignoring AdamantineOS final outcome
+- malicious changes merged into repository code without review, tests, or signed release process
+
+These remain separate security domains.
+
+## Threats and Required Controls
+
+### Transaction Authority Confusion
+
+Threat: an integrator or attacker treats a Shield signature as transaction-signing authority.
+
+Controls:
+
+- Shield v4 never signs transaction bytes.
+- Shield v4 never broadcasts.
+- Shield v4 never holds wallet private keys.
+- AdamantineOS remains final boundary.
+- Docs and tests must reject authority-injection fields.
+
+### Canonicalization Divergence
+
+Threat: two verifiers compute different signed bytes for the same semantic payload.
+
+Controls:
+
+- `shield-v4-canon.v1` canonicalization profile.
+- frozen field sets.
+- no floats, NaN, Infinity, or ambiguous numeric encodings in signed fields.
+- Unicode NFC normalization.
+- canonical set/list handling.
+- frozen Known-Answer Test vectors.
+
+### Cross-Domain Signature Replay
+
+Threat: a valid component signature is replayed as an Orchestrator signature, or the reverse.
+
+Controls:
+
+- domain tag is part of signed bytes.
+- component verdict tag differs from Orchestrator receipt tag.
+- verifier checks role, schema, key, policy, and domain tag together.
+
+### Replay and Staleness
+
+Threat: an old valid receipt is reused.
+
+Controls:
+
+- signed `request_id`.
+- signed `freshness_nonce`.
+- signed `not_before` and `not_after`.
+- verifier-side duplicate tracking inside freshness window.
+- stale, future, duplicated, or out-of-window receipts fail closed.
+
+### Key-Role Confusion
+
+Threat: a key authorized for one component signs for another role.
+
+Controls:
+
+- key registry binds `role`, `key_id`, `key_version`, and `algorithm`.
+- component roles are distinct from Orchestrator role.
+- Q-ID identity keys must not be reused as Shield decision keys.
+- wrong-role signatures fail closed.
+
+### Key Revocation and Registry Rollback
+
+Threat: an old registry re-activates a revoked key.
+
+Controls:
+
+- registry is versioned.
+- key status is checked.
+- revoked keys fail closed.
+- lower registry versions cannot re-activate a key that a verifier has already seen revoked.
+- verifier-required trust state is authoritative.
+
+### Signature Policy Downgrade
+
+Threat: an attacker strips required signatures or presents a weaker policy.
+
+Controls:
+
+- verifier-required policy is authoritative.
+- embedded `signature_policy` is signed evidence only.
+- required classical and ML-DSA paths must both verify for `policy.v1`.
+- FN-DSA evidence is optional and cannot override required-path failure.
+
+### Signature Bundle Splicing
+
+Threat: valid signatures from different receipts are mixed into one bundle.
+
+Controls:
+
+- every signature signs the same domain-separated `signed_payload_hash`.
+- duplicate algorithms fail closed.
+- unknown algorithms fail closed.
+- key id, key version, algorithm, role, policy, and payload hash are checked together.
+
+### Metadata Authority Injection
+
+Threat: metadata fields claim approval, signing permission, broadcast permission, bypass authority, or trusted status.
+
+Controls:
+
+- metadata is evidence only.
+- forbidden authority keys fail closed.
+- nested metadata is recursively checked.
+- AdamantineOS ignores upstream final authority claims.
+
+### v4-to-v3 Downgrade
+
+Threat: untrusted input flips v4-required mode to v3-allowed mode.
+
+Controls:
+
+- mode governance belongs to AdamantineOS / trusted verifier configuration.
+- upstream mode fields are evidence only.
+- v3 receipts are rejected when v4 is required.
+- rollback is fail-closed unless future versioned governance explicitly permits it.
+
+### Verification DoS
+
+Threat: attackers flood the verifier with expensive malformed signature payloads.
+
+Controls:
+
+- reject malformed input before cryptographic verification.
+- validate schema, field count, canonical shape, hashes, key status, and policy before signature work.
+- bound signature count and bundle size.
+- define per-request verification work budget before release.
+
+## Negative Tests Required Before v4 Lock
+
+Minimum negative tests:
+
+- missing component signature -> DENY
+- missing Orchestrator signature -> DENY
+- wrong component key id -> DENY
+- wrong Orchestrator key id -> DENY
+- unknown algorithm -> DENY
+- unsupported algorithm -> DENY
+- signature algorithm downgrade -> DENY
+- v3 receipt submitted where v4 is required -> DENY
+- signed payload changed after signing -> DENY
+- receipt hash changed after signing -> DENY
+- context hash changed after signing -> DENY
+- request id changed after signing -> DENY
+- reason id changed after signing -> DENY
+- metadata authority injection -> DENY
+- forged `handoff_allowed` -> DENY
+- replay / stale receipt -> DENY
+- malformed base64 or signature encoding -> DENY
+- empty signature bundle -> DENY
+- duplicate component verdict with valid-looking signatures -> DENY
+- valid component signatures but missing required component -> DENY
+- valid component signature from wrong component role -> DENY
+- FN-DSA valid but ML-DSA invalid -> DENY
+- classical valid but ML-DSA invalid -> DENY
+- ML-DSA valid but classical invalid -> DENY
+- domain tag mismatch -> DENY
+- trust-registry rollback -> DENY
+- key revoked at verification time -> DENY
+- receipt produced outside key validity window -> DENY
+
+## Threat Model Summary
+
+The main Shield v4 risk is not adding cryptography.
+
+The main risk is accidentally creating signed authority where only signed evidence should exist.
+
+Shield v4 must prove decision evidence and still fail closed.
+
+AdamantineOS remains the final boundary.
