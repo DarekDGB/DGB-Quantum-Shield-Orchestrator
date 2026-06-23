@@ -48,6 +48,7 @@ REQUIRED_UNSIGNED_VERDICT_FIELDS = frozenset(
     }
 )
 REQUIRED_SIGNED_VERDICT_FIELDS = REQUIRED_UNSIGNED_VERDICT_FIELDS | {"signed_payload_hash", "signature_bundle"}
+OPTIONAL_SIGNED_VERDICT_FIELDS = frozenset({"verification_summary"})
 FORBIDDEN_METADATA_AUTHORITY_KEYS = frozenset(
     {
         "allow",
@@ -129,7 +130,7 @@ def component_role_for(component_id: str) -> str:
 def unsigned_component_payload(verdict: dict[str, Any]) -> dict[str, Any]:
     if not isinstance(verdict, dict):
         raise ValueError("component verdict must be dict")
-    if set(verdict.keys()) != REQUIRED_SIGNED_VERDICT_FIELDS:
+    if set(verdict.keys()) - OPTIONAL_SIGNED_VERDICT_FIELDS != REQUIRED_SIGNED_VERDICT_FIELDS:
         raise ValueError("component verdict fields must match required schema")
     component_id = _require_non_empty_str(verdict["component_id"], field="component_id")
     component_role_for(component_id)
