@@ -35,6 +35,8 @@ REQUIRED_RECEIPT_FIELDS = frozenset(
         "fail_closed",
     }
 )
+OPTIONAL_RECEIPT_FIELDS = frozenset({"verification_summary"})
+UNSIGNED_RECEIPT_EXCLUDED_FIELDS = frozenset({"receipt_hash", "signed_payload_hash", "signature_bundle", "verification_summary"})
 UNSIGNED_RECEIPT_FIELDS = REQUIRED_RECEIPT_FIELDS - {"receipt_hash", "signed_payload_hash", "signature_bundle"}
 FORBIDDEN_METADATA_AUTHORITY_KEYS = frozenset(
     {
@@ -175,7 +177,7 @@ def validate_receipt_envelope(
 ) -> dict[str, Any]:
     if not isinstance(receipt, dict):
         raise ValueError("receipt must be dict")
-    if set(receipt.keys()) != REQUIRED_RECEIPT_FIELDS:
+    if set(receipt.keys()) - OPTIONAL_RECEIPT_FIELDS != REQUIRED_RECEIPT_FIELDS:
         raise ValueError("receipt fields must match required schema")
     if receipt["schema_version"] != RECEIPT_SCHEMA_VERSION:
         raise ValueError("receipt schema mismatch")
@@ -189,7 +191,7 @@ def validate_receipt_envelope(
         raise ValueError("signature policy mismatch")
     if _require_hash(receipt["context_hash"], field="context_hash") != _require_hash(expected_context_hash, field="expected_context_hash"):
         raise ValueError("receipt context mismatch")
-    unsigned_payload = {key: receipt[key] for key in UNSIGNED_RECEIPT_FIELDS}
+    unsigned_payload = {key: receipt[key] for key in receipt if key not in UNSIGNED_RECEIPT_EXCLUDED_FIELDS}
     if build_receipt_hash(unsigned_payload) != receipt["receipt_hash"]:
         raise ValueError("receipt hash mismatch")
     expected_payload_hash = signed_payload_hash(domain_tag=ORCHESTRATOR_RECEIPT_DOMAIN, payload=unsigned_payload)
