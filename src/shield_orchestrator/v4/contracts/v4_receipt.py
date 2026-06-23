@@ -11,7 +11,16 @@ from shield_orchestrator.v4.signature_bundle import SignatureVerifier, verify_si
 
 CONTRACT_VERSION = 4
 SUPPORTED_COMPONENTS = ("adn", "dqsn", "guardian_wallet", "qwg", "sentinel_ai")
+COMPONENT_ROLES = {
+    "adn": "shield_component_adn",
+    "dqsn": "shield_component_dqsn",
+    "guardian_wallet": "shield_component_guardian_wallet",
+    "qwg": "shield_component_qwg",
+    "sentinel_ai": "shield_component_sentinel_ai",
+}
 FINAL_OUTCOMES = ("ALLOW", "DENY", "HUMAN_REVIEW_REQUIRED")
+DENYING_COMPONENT_DECISIONS = frozenset({"DENY", "ERROR"})
+ESCALATING_COMPONENT_DECISIONS = frozenset({"ESCALATE", "SKIPPED"})
 REQUIRED_RECEIPT_FIELDS = frozenset(
     {
         "schema_version",
@@ -88,6 +97,117 @@ def _contains_forbidden_metadata_authority(value: Any) -> bool:
     return False
 
 
+def _expected_final_outcome(component_verdicts: list[dict[str, Any]]) -> str:
+    decisions = {verdict["decision"] for verdict in component_verdicts}
+    if decisions & DENYING_COMPONENT_DECISIONS:
+        return "DENY"
+    if decisions & ESCALATING_COMPONENT_DECISIONS:
+        return "HUMAN_REVIEW_REQUIRED"
+    return "ALLOW"
+
+
+def _validate_component_verdicts_for_receipt(
+    component_verdicts: Any,
+    *,
+    expected_context_hash: str,
+) -> list[dict[str, Any]]:
+    if not isinstance(component_verdicts, list) or len(component_verdicts) != len(SUPPORTED_COMPONENTS):
+        raise ValueError("component_verdicts must contain every required component")
+    seen: set[str] = set()
+    checked: list[dict[str, Any]] = []
+    for verdict in component_verdicts:
+        if not isinstance(verdict, dict):
+            raise ValueError("component verdict must be dict")
+        component_id = _require_non_empty_str(verdict.get("component_id"), field="component_id")
+        if component_id not in COMPONENT_ROLES:
+            raise ValueError("unsupported component verdict")
+        if component_id in seen:
+            raise ValueError("duplicate component verdict")
+        seen.add(component_id)
+        if verdict.get("contract_version") != CONTRACT_VERSION:
+            raise ValueError("component verdict contract mismatch")
+        if verdict.get("schema_version") != "shield.verdict.v2":
+            raise ValueError("component verdict schema mismatch")
+        if _require_hash(verdict.get("context_hash"), field="component context_hash") != expected_context_hash:
+            raise ValueError("component verdict context mismatch")
+        decision = _require_non_empty_str(verdict.get("decision"), field="component decision")
+        if decision not in {"ALLOW", "ESCALATE", "DENY", "ERROR", "SKIPPED"}:
+            raise ValueError("unsupported component verdict decision")
+        checked.append({**verdict, "component_id": component_id, "decision": decision})
+    return checked
+
+
+def _validate_component_signature_results_for_receipt(results: Any) -> list[dict[str, Any]]:
+    if not isinstance(results, list) or len(results) != len(SUPPORTED_COMPONENTS):
+        raise ValueError("component_signature_results must contain every required component")
+    seen: set[str] = set()
+    checked: list[dict[str, Any]] = []
+    for result in results:
+        if not isinstance(result, dict):
+            raise ValueError("component signature result must be dict")
+        component_id = _require_non_empty_str(result.get("component_id"), field="component_id")
+        if component_id not in COMPONENT_ROLES:
+            raise ValueError("unsupported component signature result")
+        if component_id in seen:
+            raise ValueError("duplicate component signature result")
+        seen.add(component_id)
+        if result.get("verified") is not True:
+            raise ValueError("component signature result must be verified")
+        if "component_role" in result and result["component_role"] != COMPONENT_ROLES[component_id]:
+            raise ValueError("component signature result role mismatch")
+        if "signature_policy" in result and result["signature_policy"] != POLICY_VERSION:
+            raise ValueError("component signature result policy mismatch")
+        if "verified_algorithms" in result:
+            algorithms = result["verified_algorithms"]
+            if not isinstance(algorithms, list) or set((str(item) for item in algorithms)) < {"classical-ed25519", "ml-dsa"}:
+                raise ValueError("component signature result missing required algorithms")
+        checked.append(dict(result))
+    return checked
+
+
+def _validate_receipt_payload_semantics(payload: dict[str, Any], *, expected_context_hash: str) -> None:
+    if set(payload.keys()) != UNSIGNED_RECEIPT_FIELDS:
+        raise ValueError("unsigned receipt payload fields must match required schema")
+    if payload["schema_version"] != RECEIPT_SCHEMA_VERSION:
+        raise ValueError("receipt schema mismatch")
+    if payload["contract_version"] != CONTRACT_VERSION:
+        raise ValueError("receipt contract mismatch")
+    if payload["fail_closed"] is not True:
+        raise ValueError("receipt fail_closed must be true")
+    if payload["canonicalization_profile"] != CANONICALIZATION_PROFILE:
+        raise ValueError("canonicalization profile mismatch")
+    if payload["signature_policy"] != SIGNATURE_POLICY_V1.policy_version:
+        raise ValueError("signature policy mismatch")
+    if _require_hash(payload["context_hash"], field="context_hash") != expected_context_hash:
+        raise ValueError("receipt context mismatch")
+    _require_non_empty_str(payload["request_id"], field="request_id")
+    _require_non_empty_str(payload["freshness_nonce"], field="freshness_nonce")
+    _require_non_empty_str(payload["not_before"], field="not_before")
+    _require_non_empty_str(payload["not_after"], field="not_after")
+    component_verdicts = _validate_component_verdicts_for_receipt(
+        payload["component_verdicts"],
+        expected_context_hash=expected_context_hash,
+    )
+    _validate_component_signature_results_for_receipt(payload["component_signature_results"])
+    if payload["final_outcome"] not in FINAL_OUTCOMES:
+        raise ValueError("unsupported final outcome")
+    expected_outcome = _expected_final_outcome(component_verdicts)
+    if payload["final_outcome"] != expected_outcome:
+        raise ValueError("receipt final_outcome does not match component decisions")
+    if not isinstance(payload["dominant_reason_ids"], list) or not payload["dominant_reason_ids"]:
+        raise ValueError("dominant_reason_ids must be non-empty list")
+    for reason_id in payload["dominant_reason_ids"]:
+        _require_non_empty_str(reason_id, field="dominant_reason_id")
+    if isinstance(payload["key_registry_version"], bool) or not isinstance(payload["key_registry_version"], int) or payload["key_registry_version"] <= 0:
+        raise ValueError("key_registry_version must be positive integer")
+    if not isinstance(payload["adamantineos_handoff"], dict):
+        raise ValueError("adamantineos_handoff must be dict")
+    if _contains_forbidden_metadata_authority(payload["adamantineos_handoff"]):
+        raise ValueError("adamantineos_handoff contains forbidden authority field")
+    if payload["final_outcome"] != "ALLOW" and payload["adamantineos_handoff"].get("handoff_allowed") is True:
+        raise ValueError("non-ALLOW receipt cannot carry handoff_allowed true")
+
+
 def build_receipt_hash(unsigned_payload: dict[str, Any]) -> str:
     return hashlib.sha256(to_canonical_json(unsigned_payload).encode("utf-8")).hexdigest()
 
@@ -109,27 +229,24 @@ def build_unsigned_receipt_payload(
     request_id = _require_non_empty_str(request_id, field="request_id")
     context_hash = _require_hash(context_hash, field="context_hash")
     freshness_nonce = _require_non_empty_str(freshness_nonce, field="freshness_nonce")
-    if not isinstance(component_verdicts, list) or len(component_verdicts) != len(SUPPORTED_COMPONENTS):
-        raise ValueError("component_verdicts must contain every required component")
-    seen_components = [
-        _require_non_empty_str(item.get("component_id"), field="component_id")
-        for item in component_verdicts
-        if isinstance(item, dict)
-    ]
-    if tuple(sorted(seen_components)) != SUPPORTED_COMPONENTS:
-        raise ValueError("component_verdicts must match required component set")
-    if not isinstance(component_signature_results, list) or len(component_signature_results) != len(SUPPORTED_COMPONENTS):
-        raise ValueError("component_signature_results must contain every required component")
+    _validate_component_verdicts_for_receipt(component_verdicts, expected_context_hash=context_hash)
+    _validate_component_signature_results_for_receipt(component_signature_results)
     if final_outcome not in FINAL_OUTCOMES:
         raise ValueError("unsupported final outcome")
+    if final_outcome != _expected_final_outcome(component_verdicts):
+        raise ValueError("receipt final_outcome does not match component decisions")
     if not isinstance(dominant_reason_ids, list) or not dominant_reason_ids:
         raise ValueError("dominant_reason_ids must be non-empty list")
+    for reason_id in dominant_reason_ids:
+        _require_non_empty_str(reason_id, field="dominant_reason_id")
     if isinstance(key_registry_version, bool) or not isinstance(key_registry_version, int) or key_registry_version <= 0:
         raise ValueError("key_registry_version must be positive integer")
     if not isinstance(adamantineos_handoff, dict):
         raise ValueError("adamantineos_handoff must be dict")
     if _contains_forbidden_metadata_authority(adamantineos_handoff):
         raise ValueError("adamantineos_handoff contains forbidden authority field")
+    if final_outcome != "ALLOW" and adamantineos_handoff.get("handoff_allowed") is True:
+        raise ValueError("non-ALLOW receipt cannot carry handoff_allowed true")
     payload = {
         "schema_version": RECEIPT_SCHEMA_VERSION,
         "contract_version": CONTRACT_VERSION,
@@ -192,6 +309,7 @@ def validate_receipt_envelope(
     if _require_hash(receipt["context_hash"], field="context_hash") != _require_hash(expected_context_hash, field="expected_context_hash"):
         raise ValueError("receipt context mismatch")
     unsigned_payload = {key: receipt[key] for key in receipt if key not in UNSIGNED_RECEIPT_EXCLUDED_FIELDS}
+    _validate_receipt_payload_semantics(unsigned_payload, expected_context_hash=_require_hash(expected_context_hash, field="expected_context_hash"))
     if build_receipt_hash(unsigned_payload) != receipt["receipt_hash"]:
         raise ValueError("receipt hash mismatch")
     expected_payload_hash = signed_payload_hash(domain_tag=ORCHESTRATOR_RECEIPT_DOMAIN, payload=unsigned_payload)
