@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+import base64
+import binascii
 from collections.abc import Callable
 from typing import Any, Protocol
 
@@ -8,6 +10,8 @@ from shield_orchestrator.v4.crypto_algorithms import SIGNATURE_POLICY_V1
 from shield_orchestrator.v4.key_registry import KeyRegistryEntry
 
 REAL_CRYPTO_SIGNATURE_INPUT_PREFIX = "DGB-SHIELD-V4-REAL-CRYPTO-SIGNATURE-INPUT"
+REAL_SIGNATURE_ENCODING_PREFIX = "b64u:"
+_BASE64URL_ALPHABET = frozenset("ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-_")
 _ALLOWED_DOMAIN_TAGS = frozenset({COMPONENT_VERDICT_DOMAIN, ORCHESTRATOR_RECEIPT_DOMAIN})
 _TEST_ONLY_MARKERS = ("test-only",)
 _TEST_ONLY_PREFIXES = ("test-",)
@@ -107,6 +111,40 @@ def reject_test_only_private_key_reference(private_key_reference: str) -> str:
     return clean
 
 
+def encode_binary_signature_material(raw: bytes, *, field: str = "signature") -> str:
+    """Encode real binary signature/key material using unpadded base64url.
+
+    Real ML-DSA signatures and public keys are binary and substantially larger than
+    the historical deterministic 64-character test digests. The explicit ``b64u:``
+    prefix prevents silently confusing real signatures with test-only digest strings.
+    """
+
+    if not isinstance(raw, bytes) or not raw:
+        raise ShieldV4RealCryptoBackendError(f"{field} bytes must be non-empty")
+    encoded = base64.urlsafe_b64encode(raw).decode("ascii").rstrip("=")
+    return f"{REAL_SIGNATURE_ENCODING_PREFIX}{encoded}"
+
+
+def decode_binary_signature_material(encoded: Any, *, field: str = "signature") -> bytes:
+    """Decode an explicit ``b64u:`` signature/key encoding into bytes."""
+
+    clean = _require_non_empty_str(encoded, field=field)
+    if not clean.startswith(REAL_SIGNATURE_ENCODING_PREFIX):
+        raise ShieldV4RealCryptoBackendError(f"{field} must use b64u encoding")
+    body = clean[len(REAL_SIGNATURE_ENCODING_PREFIX) :]
+    if not body:
+        raise ShieldV4RealCryptoBackendError(f"{field} b64u payload must be non-empty")
+    if "=" in body:
+        raise ShieldV4RealCryptoBackendError(f"{field} b64u payload must be unpadded")
+    if set(body) - _BASE64URL_ALPHABET:
+        raise ShieldV4RealCryptoBackendError(f"{field} b64u payload is invalid")
+    try:
+        decoded = base64.urlsafe_b64decode(body + "=" * (-len(body) % 4))
+    except (binascii.Error, ValueError) as exc:
+        raise ShieldV4RealCryptoBackendError(f"{field} b64u payload is invalid") from exc
+    return decoded
+
+
 def build_real_crypto_signature_input(
     *,
     algorithm: str,
@@ -192,7 +230,7 @@ def verify_signature_entry_with_real_backend(
     """Verify one Shield v4 signature entry with a production backend."""
 
     reject_test_only_key_material(key)
-    algorithm = _require_non_empty_str(entry.get("algorithm"), field="algorithm")
+    algorithm = _require_supported_algorithm(entry.get("algorithm"))
     key_id = _require_non_empty_str(entry.get("key_id"), field="key_id")
     key_version = _require_positive_int(entry.get("key_version"), field="key_version")
     if (key.algorithm, key.key_id, key.key_version) != (algorithm, key_id, key_version):
