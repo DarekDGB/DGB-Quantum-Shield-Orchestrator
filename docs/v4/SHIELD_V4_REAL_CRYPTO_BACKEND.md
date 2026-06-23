@@ -45,12 +45,32 @@ The Orchestrator exposes a backend-neutral adapter contract in:
 src/shield_orchestrator/v4/real_crypto_backend.py
 ```
 
-The adapter does not vendor or import a specific PQC library. Real deployments may
+The neutral adapter does not require a specific PQC library. Real deployments may
 connect liboqs, an HSM, a FIPS-validated module, or another reviewed backend through
 the same interface.
 
-This keeps CI deterministic and prevents local machine state from silently changing
-Shield v4 verification results.
+The optional OQS ML-DSA backend lives in:
+
+```text
+src/shield_orchestrator/v4/oqs_mldsa_backend.py
+```
+
+It lazily imports `oqs` only when used, so normal CI and non-OQS deployments do not
+silently depend on local machine crypto state. If OQS is missing, disabled, or lacks
+the locked mechanism, the backend fails closed.
+
+## OQS ML-DSA mapping
+
+For Shield v4 `policy.v1`, the optional OQS backend maps:
+
+```text
+Shield algorithm: ml-dsa
+OQS mechanism:    ML-DSA-65
+```
+
+The mechanism is deliberately locked for this backend. A caller cannot silently swap
+`ML-DSA-44`, `ML-DSA-87`, Falcon/FN-DSA, or another mechanism behind the Shield
+policy name.
 
 ## Frozen real-signature input
 
@@ -77,6 +97,23 @@ Rules:
 The `signed_payload_hash` is already computed over the domain-separated canonical
 payload. The real-signature input binds that hash to the concrete signature entry so
 signatures cannot be spliced across algorithms, keys, or bundles.
+
+## Binary encoding lock
+
+Real ML-DSA signatures and public keys are binary. Shield v4 real backend adapters use
+explicit unpadded base64url encoding with the prefix:
+
+```text
+b64u:<unpadded-base64url-bytes>
+```
+
+Rules:
+
+- real binary signatures use `b64u:`;
+- real OQS public keys use `b64u:` in the trust registry;
+- padding characters (`=`) are rejected;
+- malformed base64url is rejected before calling a crypto backend;
+- historical 64-character deterministic test digests remain test fixtures only.
 
 ## Test-only material rejection
 
