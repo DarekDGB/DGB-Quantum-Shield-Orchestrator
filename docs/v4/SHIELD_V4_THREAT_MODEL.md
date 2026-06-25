@@ -242,6 +242,17 @@ Controls:
 - bound signature count and bundle size.
 - define per-request verification work budget before release.
 
+### Real Backend Proof Over-Claim
+
+Threat: deterministic fake-backend CI is described as proof that live liboqs ML-DSA has run.
+
+Controls:
+
+- default CI is described as interface-contract and fail-closed proof only;
+- live liboqs ML-DSA proof is an optional gated job using `SHIELD_V4_REAL_OQS=1`;
+- the gated job must use a JUnit not-skipped guard so import-skipped OQS tests cannot read as a pass;
+- release-grade real-backend proof remains part of the V4.10 proof pack before public release claims.
+
 ## Negative Tests Required Before v4 Lock
 
 Minimum negative tests:
