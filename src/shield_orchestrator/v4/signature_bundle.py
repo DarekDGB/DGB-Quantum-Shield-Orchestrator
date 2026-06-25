@@ -110,7 +110,13 @@ def verify_signature_bundle(
             artifact_not_before=artifact_not_before,
             artifact_not_after=artifact_not_after,
         )
-        if not verifier(entry, key):
+        try:
+            verified = verifier(entry, key)
+        except Exception as exc:
+            raise ValueError("signature verifier failed closed") from exc
+        if not isinstance(verified, bool):
+            raise ValueError("signature verifier must return bool")
+        if not verified:
             raise ValueError("signature verification failed")
         results.append(
             {
