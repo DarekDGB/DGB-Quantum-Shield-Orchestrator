@@ -221,3 +221,47 @@ def test_v4_signature_bundle_rejects_top_level_field_mismatch():
                 "extra": True,
             }
         )
+
+
+def test_v48g_signature_bundle_verifier_failure_surfaces_fail_closed() -> None:
+    registry = load_key_registry(build_test_registry())
+
+    class NativeVerifierError(RuntimeError):
+        pass
+
+    def raising_verifier(_entry, _key):
+        raise NativeVerifierError("native verifier crash")
+
+    with pytest.raises(ValueError, match="signature verifier failed closed") as excinfo:
+        verify_signature_bundle(
+            good_bundle(),
+            expected_signed_payload_hash=PAYLOAD_HASH,
+            expected_domain_tag=ORCHESTRATOR_RECEIPT_DOMAIN,
+            required_role="shield_orchestrator",
+            registry=registry,
+            verification_time="2026-06-21T00:00:00Z",
+            artifact_not_before="2026-06-21T00:00:00Z",
+            artifact_not_after="2026-06-21T00:05:00Z",
+            verifier=raising_verifier,
+        )
+    assert isinstance(excinfo.value.__cause__, NativeVerifierError)
+
+
+def test_v48g_signature_bundle_rejects_truthy_non_bool_verifier_result() -> None:
+    registry = load_key_registry(build_test_registry())
+
+    def truthy_non_bool_verifier(_entry, _key):
+        return 1
+
+    with pytest.raises(ValueError, match="signature verifier must return bool"):
+        verify_signature_bundle(
+            good_bundle(),
+            expected_signed_payload_hash=PAYLOAD_HASH,
+            expected_domain_tag=ORCHESTRATOR_RECEIPT_DOMAIN,
+            required_role="shield_orchestrator",
+            registry=registry,
+            verification_time="2026-06-21T00:00:00Z",
+            artifact_not_before="2026-06-21T00:00:00Z",
+            artifact_not_after="2026-06-21T00:05:00Z",
+            verifier=truthy_non_bool_verifier,
+        )
