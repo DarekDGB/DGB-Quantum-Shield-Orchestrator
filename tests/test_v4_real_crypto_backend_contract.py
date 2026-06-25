@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import hashlib
 from dataclasses import dataclass
+from typing import Any
 
 import pytest
 
@@ -14,6 +15,8 @@ from shield_orchestrator.v4.real_crypto_backend import (
     ShieldV4RealCryptoMaterialError,
     build_real_crypto_signature_input,
     build_signature_entry_with_real_backend,
+    decode_binary_signature_material,
+    encode_binary_signature_material,
     make_real_crypto_signature_verifier,
     reject_test_only_private_key_reference,
     verify_signature_entry_with_real_backend,
@@ -22,16 +25,20 @@ from shield_orchestrator.v4.real_crypto_backend import (
 PAYLOAD_HASH = "a" * 64
 
 
+class NativeBackendError(RuntimeError):
+    pass
+
+
 @dataclass(frozen=True)
 class FakeRealBackend:
     backend_name: str = "fake-real-backend"
-    backend_version: str = "test-vector-only"
+    backend_version: str = "contract-test-vector-only"
     supported_algorithms: tuple[str, ...] = ("classical-ed25519", "ml-dsa", "fn-dsa")
+    verify_result: Any | None = None
 
     def sign_message(self, *, algorithm: str, private_key_reference: str, message: bytes) -> str:
-        return hashlib.sha256(
-            f"sign|{algorithm}|{private_key_reference}|".encode("utf-8") + message
-        ).hexdigest()
+        raw = hashlib.sha256(f"sign|{algorithm}|{private_key_reference}|".encode("utf-8") + message).digest()
+        return encode_binary_signature_material(raw, field="signature")
 
     def verify_signature(
         self,
@@ -41,43 +48,87 @@ class FakeRealBackend:
         message: bytes,
         signature: str,
     ) -> bool:
-        expected = hashlib.sha256(
-            f"verify|{algorithm}|{public_key}|".encode("utf-8") + message
-        ).hexdigest()
+        if self.verify_result is not None:
+            return self.verify_result  # type: ignore[return-value]
+        expected = _signature_for_public_key(algorithm=algorithm, public_key=public_key, message=message)
         return signature == expected
 
 
-def real_key(*, algorithm: str = "ml-dsa") -> KeyRegistryEntry:
+class AlgorithmDiscoveryFailureBackend:
+    backend_name = "algorithm-discovery-failure-backend"
+    backend_version = "contract-test-vector-only"
+
+    @property
+    def supported_algorithms(self) -> tuple[str, ...]:
+        raise NativeBackendError("backend algorithm discovery exploded")
+
+    def sign_message(self, *, algorithm: str, private_key_reference: str, message: bytes) -> str:
+        return encode_binary_signature_material(b"unreachable", field="signature")
+
+    def verify_signature(self, *, algorithm: str, public_key: str, message: bytes, signature: str) -> bool:
+        return False
+
+
+class SignFailureBackend(FakeRealBackend):
+    def sign_message(self, *, algorithm: str, private_key_reference: str, message: bytes) -> str:
+        raise NativeBackendError("native sign failure")
+
+
+class VerifyFailureBackend(FakeRealBackend):
+    def verify_signature(self, *, algorithm: str, public_key: str, message: bytes, signature: str) -> bool:
+        raise NativeBackendError("native verify failure")
+
+
+class WrappedErrorBackend(FakeRealBackend):
+    def sign_message(self, *, algorithm: str, private_key_reference: str, message: bytes) -> str:
+        raise ShieldV4RealCryptoBackendError("backend already failed closed")
+
+
+def _real_public_key_bytes(*, algorithm: str = "ml-dsa") -> bytes:
+    return f"shield-orchestrator-real-public-{algorithm}".encode("utf-8")
+
+
+def _real_public_key(*, algorithm: str = "ml-dsa") -> str:
+    return encode_binary_signature_material(_real_public_key_bytes(algorithm=algorithm), field="public_key")
+
+
+def real_key(*, algorithm: str = "ml-dsa", key_id: str | None = None) -> KeyRegistryEntry:
     return KeyRegistryEntry(
         role="shield_orchestrator",
-        key_id=f"shield_orchestrator-{algorithm}-v1",
+        key_id=key_id or f"shield_orchestrator-{algorithm}-v1",
         key_version=1,
         algorithm=algorithm,
         not_before="2026-06-21T00:00:00Z",
         not_after="2026-06-21T00:05:00Z",
         status="active",
-        public_key=f"REAL-PUBLIC-shield_orchestrator-{algorithm}-v1",
+        public_key=_real_public_key(algorithm=algorithm),
     )
 
 
-def signature_for_key(key: KeyRegistryEntry, *, domain_tag: str = ORCHESTRATOR_RECEIPT_DOMAIN) -> dict[str, object]:
-    message = build_real_crypto_signature_input(
+def _signature_message(key: KeyRegistryEntry, *, domain_tag: str = ORCHESTRATOR_RECEIPT_DOMAIN) -> bytes:
+    return build_real_crypto_signature_input(
         algorithm=key.algorithm,
         domain_tag=domain_tag,
         signed_payload_hash=PAYLOAD_HASH,
         key_id=key.key_id,
         key_version=key.key_version,
     )
-    signature = hashlib.sha256(
-        f"verify|{key.algorithm}|{key.public_key}|".encode("utf-8") + message
-    ).hexdigest()
+
+
+def _signature_for_public_key(*, algorithm: str, public_key: str, message: bytes) -> str:
+    raw = hashlib.sha256(f"verify|{algorithm}|{public_key}|".encode("utf-8") + message).digest()
+    return encode_binary_signature_material(raw, field="signature")
+
+
+def signature_for_key(key: KeyRegistryEntry, *, domain_tag: str = ORCHESTRATOR_RECEIPT_DOMAIN) -> dict[str, object]:
+    message = _signature_message(key, domain_tag=domain_tag)
     return {
         "algorithm": key.algorithm,
         "key_id": key.key_id,
         "key_version": key.key_version,
         "signed_payload_hash": PAYLOAD_HASH,
         "domain_tag": domain_tag,
-        "signature": signature,
+        "signature": _signature_for_public_key(algorithm=key.algorithm, public_key=key.public_key, message=message),
     }
 
 
@@ -105,11 +156,13 @@ def test_v48c_real_crypto_signature_input_is_frozen_and_domain_separated() -> No
     ("kwargs", "match"),
     [
         ({"algorithm": "unknown"}, "unsupported"),
+        ({"algorithm": " ml-dsa"}, "surrounding whitespace"),
         ({"domain_tag": "DGB-SHIELD-V4-WRONG"}, "domain_tag"),
         ({"signed_payload_hash": "A" * 64}, "lowercase"),
         ({"signed_payload_hash": "a" * 63}, "64-character"),
         ({"signed_payload_hash": "z" * 64}, "sha256"),
         ({"key_id": ""}, "key_id"),
+        ({"key_id": " shield_orchestrator-ml-dsa-v1"}, "surrounding whitespace"),
         ({"key_version": 0}, "key_version"),
         ({"key_version": True}, "key_version"),
     ],
@@ -127,7 +180,7 @@ def test_v48c_real_crypto_signature_input_rejects_ambiguous_values(kwargs: dict[
         build_real_crypto_signature_input(**base)  # type: ignore[arg-type]
 
 
-def test_v48c_real_crypto_signer_builds_entry_without_test_fallback() -> None:
+def test_v48c_real_crypto_signer_builds_b64u_entry_without_test_fallback() -> None:
     entry = build_signature_entry_with_real_backend(
         algorithm="ml-dsa",
         domain_tag=ORCHESTRATOR_RECEIPT_DOMAIN,
@@ -140,12 +193,13 @@ def test_v48c_real_crypto_signer_builds_entry_without_test_fallback() -> None:
 
     assert entry["algorithm"] == "ml-dsa"
     assert entry["key_id"] == "shield_orchestrator-ml-dsa-v1"
-    assert len(str(entry["signature"])) == 64
+    assert str(entry["signature"]).startswith("b64u:")
+    assert decode_binary_signature_material(entry["signature"], field="signature")
 
 
-@pytest.mark.parametrize("private_ref", ["", "test-only-private", "test-fixture-key"])
-def test_v48c_real_crypto_signer_rejects_missing_or_test_private_material(private_ref: str) -> None:
-    expected_error = ShieldV4RealCryptoBackendError if not private_ref else ShieldV4RealCryptoMaterialError
+@pytest.mark.parametrize("private_ref", ["", " test-ref", "test-only-private", "test-fixture-key"])
+def test_v48c_real_crypto_signer_rejects_missing_whitespace_or_test_private_material(private_ref: str) -> None:
+    expected_error = ShieldV4RealCryptoBackendError if not private_ref or private_ref != private_ref.strip() else ShieldV4RealCryptoMaterialError
     with pytest.raises(expected_error):
         reject_test_only_private_key_reference(private_ref)
 
@@ -158,7 +212,7 @@ def test_v48c_real_crypto_verifier_accepts_real_backend_and_rejects_tamper() -> 
     assert verify_signature_entry_with_real_backend(entry, key, backend=backend) is True
 
     tampered = dict(entry)
-    tampered["signature"] = "0" * 64
+    tampered["signature"] = encode_binary_signature_material(b"wrong-signature", field="signature")
     assert verify_signature_entry_with_real_backend(tampered, key, backend=backend) is False
 
 
@@ -188,13 +242,91 @@ def test_v48c_real_crypto_verifier_fails_closed_on_test_key_material_and_backend
         verify_signature_entry_with_real_backend(signature_for_key(real_key()), real_key(), backend=unsupported_backend)
 
 
-def test_v48c_real_crypto_verifier_rejects_entry_key_mismatch_and_empty_signature() -> None:
+def test_v48c_real_crypto_verifier_rejects_entry_key_and_schema_mismatch_and_empty_signature() -> None:
     key = real_key()
     wrong_key = real_key(algorithm="fn-dsa")
     with pytest.raises(ShieldV4RealCryptoBackendError, match="registry key"):
         verify_signature_entry_with_real_backend(signature_for_key(key), wrong_key, backend=FakeRealBackend())
 
+    with pytest.raises(ShieldV4RealCryptoBackendError, match="signature entry must be dict"):
+        verify_signature_entry_with_real_backend(["not-dict"], key, backend=FakeRealBackend())  # type: ignore[arg-type]
+
+    entry = signature_for_key(key)
+    entry["extra"] = "forbidden"
+    with pytest.raises(ShieldV4RealCryptoBackendError, match="fields"):
+        verify_signature_entry_with_real_backend(entry, key, backend=FakeRealBackend())
+
     entry = signature_for_key(key)
     entry["signature"] = ""
     with pytest.raises(ShieldV4RealCryptoBackendError, match="signature"):
         verify_signature_entry_with_real_backend(entry, key, backend=FakeRealBackend())
+
+
+def test_v48g_real_crypto_backend_wrapper_catches_native_exceptions_and_preserves_cause() -> None:
+    with pytest.raises(ShieldV4RealCryptoBackendError, match="algorithm discovery failed closed") as algorithm_error:
+        build_signature_entry_with_real_backend(
+            algorithm="ml-dsa",
+            domain_tag=ORCHESTRATOR_RECEIPT_DOMAIN,
+            signed_payload_hash=PAYLOAD_HASH,
+            key_id="shield_orchestrator-ml-dsa-v1",
+            key_version=1,
+            private_key_reference="hsm://shield-orchestrator/ml-dsa/v1",
+            backend=AlgorithmDiscoveryFailureBackend(),
+        )
+    assert isinstance(algorithm_error.value.__cause__, NativeBackendError)
+
+    with pytest.raises(ShieldV4RealCryptoBackendError, match="sign failed closed") as sign_error:
+        build_signature_entry_with_real_backend(
+            algorithm="ml-dsa",
+            domain_tag=ORCHESTRATOR_RECEIPT_DOMAIN,
+            signed_payload_hash=PAYLOAD_HASH,
+            key_id="shield_orchestrator-ml-dsa-v1",
+            key_version=1,
+            private_key_reference="hsm://shield-orchestrator/ml-dsa/v1",
+            backend=SignFailureBackend(),
+        )
+    assert isinstance(sign_error.value.__cause__, NativeBackendError)
+
+    with pytest.raises(ShieldV4RealCryptoBackendError, match="verify failed closed") as verify_error:
+        verify_signature_entry_with_real_backend(signature_for_key(real_key()), real_key(), backend=VerifyFailureBackend())
+    assert isinstance(verify_error.value.__cause__, NativeBackendError)
+
+    with pytest.raises(ShieldV4RealCryptoBackendError, match="backend already failed closed") as wrapped_error:
+        build_signature_entry_with_real_backend(
+            algorithm="ml-dsa",
+            domain_tag=ORCHESTRATOR_RECEIPT_DOMAIN,
+            signed_payload_hash=PAYLOAD_HASH,
+            key_id="shield_orchestrator-ml-dsa-v1",
+            key_version=1,
+            private_key_reference="hsm://shield-orchestrator/ml-dsa/v1",
+            backend=WrappedErrorBackend(),
+        )
+    assert wrapped_error.value.__cause__ is None
+
+
+def test_v48g_real_crypto_backend_rejects_truthy_non_bool_verify_result() -> None:
+    with pytest.raises(ShieldV4RealCryptoBackendError, match="verify must return bool"):
+        verify_signature_entry_with_real_backend(
+            signature_for_key(real_key()),
+            real_key(),
+            backend=FakeRealBackend(verify_result=1),
+        )
+
+
+def test_v48d_real_binary_encoding_helpers_are_strict() -> None:
+    encoded = encode_binary_signature_material(b"abc", field="signature")
+    assert encoded == "b64u:YWJj"
+    assert decode_binary_signature_material(encoded, field="signature") == b"abc"
+
+    with pytest.raises(ShieldV4RealCryptoBackendError, match="bytes"):
+        encode_binary_signature_material(b"", field="signature")
+    with pytest.raises(ShieldV4RealCryptoBackendError, match="b64u"):
+        decode_binary_signature_material("abc", field="signature")
+    with pytest.raises(ShieldV4RealCryptoBackendError, match="non-empty"):
+        decode_binary_signature_material("b64u:", field="signature")
+    with pytest.raises(ShieldV4RealCryptoBackendError, match="unpadded"):
+        decode_binary_signature_material("b64u:YWJj=", field="signature")
+    with pytest.raises(ShieldV4RealCryptoBackendError, match="invalid"):
+        decode_binary_signature_material("b64u:****", field="signature")
+    with pytest.raises(ShieldV4RealCryptoBackendError, match="invalid"):
+        decode_binary_signature_material("b64u:A", field="signature")
