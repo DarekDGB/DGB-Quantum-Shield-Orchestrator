@@ -76,5 +76,6 @@ jobs:
             -q --junitxml=shield-v4-real-oqs-results.xml
 
       - name: Assert real liboqs proof was not skipped
+        if: always()
         run: |
           python scripts/assert_real_oqs_junit_not_skipped.py shield-v4-real-oqs-results.xml
