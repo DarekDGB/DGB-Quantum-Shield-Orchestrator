@@ -4,10 +4,25 @@ from collections.abc import Callable
 from typing import Any, TypeAlias
 
 from shield_orchestrator.v4 import SIGNATURE_BUNDLE_SCHEMA_VERSION
-from shield_orchestrator.v4.crypto_algorithms import get_signature_policy, require_supported_algorithm
+from shield_orchestrator.v4.crypto_algorithms import (
+    get_signature_policy,
+    require_supported_algorithm,
+    require_supported_standard_profile,
+)
 from shield_orchestrator.v4.key_registry import KeyRegistry, KeyRegistryEntry, find_key
 
 SignatureVerifier: TypeAlias = Callable[[dict[str, Any], KeyRegistryEntry], bool]
+SIGNATURE_ENTRY_FIELDS = frozenset(
+    {
+        "algorithm",
+        "standard_profile",
+        "key_id",
+        "key_version",
+        "signed_payload_hash",
+        "domain_tag",
+        "signature",
+    }
+)
 
 
 def _require_non_empty_str(value: Any, *, field: str) -> str:
@@ -77,16 +92,13 @@ def verify_signature_bundle(
     for entry in checked_bundle["signatures"]:
         if not isinstance(entry, dict):
             raise ValueError("signature entry must be dict")
-        if set(entry.keys()) != {
-            "algorithm",
-            "key_id",
-            "key_version",
-            "signed_payload_hash",
-            "domain_tag",
-            "signature",
-        }:
+        if set(entry.keys()) != SIGNATURE_ENTRY_FIELDS:
             raise ValueError("signature entry fields must match required schema")
         algorithm = require_supported_algorithm(_require_non_empty_str(entry["algorithm"], field="algorithm"))
+        standard_profile = require_supported_standard_profile(
+            algorithm=algorithm,
+            standard_profile=_require_non_empty_str(entry["standard_profile"], field="standard_profile"),
+        )
         if algorithm in seen_algorithms:
             raise ValueError("duplicate signature algorithm")
         seen_algorithms.add(algorithm)
@@ -121,6 +133,7 @@ def verify_signature_bundle(
         results.append(
             {
                 "algorithm": algorithm,
+                "standard_profile": standard_profile,
                 "key_id": key_id,
                 "key_version": key_version,
                 "verified": True,
@@ -134,5 +147,6 @@ def verify_signature_bundle(
         "required_algorithms": list(policy.required_algorithms),
         "optional_algorithms": list(policy.optional_algorithms),
         "verified_algorithms": [result["algorithm"] for result in results],
+        "verified_standard_profiles": [result["standard_profile"] for result in results],
         "results": results,
     }
