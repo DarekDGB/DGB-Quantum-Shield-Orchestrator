@@ -37,6 +37,19 @@ Shield v4 policy `policy.v1` uses these names:
 `fn-dsa` is not ML-DSA. It must never override failure of the required
 `classical-ed25519` or `ml-dsa` paths.
 
+V4.8H selects Falcon-1024 for the draft FN-DSA profile:
+
+```text
+Shield algorithm: fn-dsa
+Standard profile: fips206-draft-falcon1024-v1
+Falcon parameter set: Falcon-1024
+Security level note: Falcon-1024 is NIST security level 5; ML-DSA-65 remains the required level-3 PQC path.
+```
+
+The FN-DSA profile is optional additional evidence only. It is draft-profile
+crypto-agility evidence and must not be described as final FIPS 206 production
+proof until final FIPS 206 support is separately integrated and tested.
+
 ## Backend model
 
 The Orchestrator exposes a backend-neutral adapter contract in:
@@ -104,6 +117,7 @@ DGB-SHIELD-V4-REAL-CRYPTO-SIGNATURE-INPUT
 <domain_tag>
 <signed_payload_hash>
 <algorithm>
+<standard_profile>
 <key_id>
 <key_version>
 ```
@@ -115,16 +129,19 @@ Rules:
 - no trailing newline;
 - `signed_payload_hash` must be lowercase SHA-256 hex;
 - `domain_tag` must be one of the frozen Shield v4 signing domains;
+- `standard_profile` must be allow-listed for the selected algorithm;
 - `algorithm`, `key_id`, and `key_version` must match the trust registry entry.
 
 The `signed_payload_hash` is already computed over the domain-separated canonical
 payload. The real-signature input binds that hash to the concrete signature entry so
-signatures cannot be spliced across algorithms, keys, or bundles.
+signatures cannot be spliced across algorithms, keys, profiles, or bundles. A
+signature over `fn-dsa` profile `fips206-draft-falcon1024-v1` must not be silently
+reinterpreted as Falcon-512 or any future final FIPS 206 profile.
 
 ## Binary encoding lock
 
-Real ML-DSA signatures and public keys are binary. Shield v4 real backend adapters use
-explicit unpadded base64url encoding with the prefix:
+Real ML-DSA and FN-DSA/Falcon signatures and public keys are binary. Shield v4 real
+backend adapters use explicit unpadded base64url encoding with the prefix:
 
 ```text
 b64u:<unpadded-base64url-bytes>
