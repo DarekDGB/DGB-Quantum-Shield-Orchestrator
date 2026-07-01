@@ -8,6 +8,7 @@ import pytest
 
 import shield_orchestrator.v4.oqs_mldsa_backend as oqs_backend_module
 from shield_orchestrator.v4.canonical_json import ORCHESTRATOR_RECEIPT_DOMAIN
+from shield_orchestrator.v4.crypto_algorithms import default_standard_profile_for_algorithm
 from shield_orchestrator.v4.key_registry import KeyRegistryEntry
 from shield_orchestrator.v4.oqs_mldsa_backend import OQS_ML_DSA_MECHANISM, OqsMlDsaBackend
 from shield_orchestrator.v4.real_crypto_backend import (
@@ -86,6 +87,7 @@ def test_v48d_oqs_mldsa_backend_builds_real_b64u_signature_entry_and_verifies() 
     backend = OqsMlDsaBackend(private_key_resolver=resolver, oqs_module=FakeOqsModule())
     entry = build_signature_entry_with_real_backend(
         algorithm="ml-dsa",
+        standard_profile=default_standard_profile_for_algorithm("ml-dsa"),
         domain_tag=ORCHESTRATOR_RECEIPT_DOMAIN,
         signed_payload_hash=PAYLOAD_HASH,
         key_id="shield_orchestrator-ml-dsa-v1",
@@ -112,6 +114,7 @@ def test_v48d_oqs_mldsa_backend_rejects_wrong_algorithm_and_mechanism() -> None:
     backend = OqsMlDsaBackend(private_key_resolver=resolver, oqs_module=FakeOqsModule())
     message = build_real_crypto_signature_input(
         algorithm="ml-dsa",
+        standard_profile=default_standard_profile_for_algorithm("ml-dsa"),
         domain_tag=ORCHESTRATOR_RECEIPT_DOMAIN,
         signed_payload_hash=PAYLOAD_HASH,
         key_id="shield_orchestrator-ml-dsa-v1",
@@ -359,6 +362,7 @@ def test_v48g_oqs_mldsa_backend_validates_optional_backend_length_metadata() -> 
     object.__setattr__(backend._oqs_module, "Signature", MissingLengthDetailsOqsSignature)  # type: ignore[misc]
     message = build_real_crypto_signature_input(
         algorithm="ml-dsa",
+        standard_profile=default_standard_profile_for_algorithm("ml-dsa"),
         domain_tag=ORCHESTRATOR_RECEIPT_DOMAIN,
         signed_payload_hash=PAYLOAD_HASH,
         key_id="shield_orchestrator-ml-dsa-v1",
