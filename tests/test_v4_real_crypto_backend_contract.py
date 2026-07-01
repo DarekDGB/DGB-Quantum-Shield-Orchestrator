@@ -7,6 +7,7 @@ from typing import Any
 import pytest
 
 from shield_orchestrator.v4.canonical_json import COMPONENT_VERDICT_DOMAIN, ORCHESTRATOR_RECEIPT_DOMAIN
+from shield_orchestrator.v4.crypto_algorithms import default_standard_profile_for_algorithm
 from shield_orchestrator.v4.key_registry import KeyRegistryEntry
 from shield_orchestrator.v4.real_crypto_backend import (
     REAL_CRYPTO_SIGNATURE_INPUT_PREFIX,
@@ -108,6 +109,7 @@ def real_key(*, algorithm: str = "ml-dsa", key_id: str | None = None) -> KeyRegi
 def _signature_message(key: KeyRegistryEntry, *, domain_tag: str = ORCHESTRATOR_RECEIPT_DOMAIN) -> bytes:
     return build_real_crypto_signature_input(
         algorithm=key.algorithm,
+        standard_profile=default_standard_profile_for_algorithm(key.algorithm),
         domain_tag=domain_tag,
         signed_payload_hash=PAYLOAD_HASH,
         key_id=key.key_id,
@@ -124,6 +126,7 @@ def signature_for_key(key: KeyRegistryEntry, *, domain_tag: str = ORCHESTRATOR_R
     message = _signature_message(key, domain_tag=domain_tag)
     return {
         "algorithm": key.algorithm,
+        "standard_profile": default_standard_profile_for_algorithm(key.algorithm),
         "key_id": key.key_id,
         "key_version": key.key_version,
         "signed_payload_hash": PAYLOAD_HASH,
@@ -135,6 +138,7 @@ def signature_for_key(key: KeyRegistryEntry, *, domain_tag: str = ORCHESTRATOR_R
 def test_v48c_real_crypto_signature_input_is_frozen_and_domain_separated() -> None:
     encoded = build_real_crypto_signature_input(
         algorithm="ml-dsa",
+        standard_profile=default_standard_profile_for_algorithm("ml-dsa"),
         domain_tag=ORCHESTRATOR_RECEIPT_DOMAIN,
         signed_payload_hash=PAYLOAD_HASH,
         key_id="shield_orchestrator-ml-dsa-v1",
@@ -146,6 +150,7 @@ def test_v48c_real_crypto_signature_input_is_frozen_and_domain_separated() -> No
         f"{ORCHESTRATOR_RECEIPT_DOMAIN}\n"
         f"{PAYLOAD_HASH}\n"
         "ml-dsa\n"
+        "fips204-ml-dsa-65-v1\n"
         "shield_orchestrator-ml-dsa-v1\n"
         "1"
     ).encode("utf-8")
@@ -157,6 +162,8 @@ def test_v48c_real_crypto_signature_input_is_frozen_and_domain_separated() -> No
     [
         ({"algorithm": "unknown"}, "unsupported"),
         ({"algorithm": " ml-dsa"}, "surrounding whitespace"),
+        ({"standard_profile": "fips206-draft-falcon1024-v1"}, "standard_profile"),
+        ({"standard_profile": " ml-dsa-profile"}, "surrounding whitespace"),
         ({"domain_tag": "DGB-SHIELD-V4-WRONG"}, "domain_tag"),
         ({"signed_payload_hash": "A" * 64}, "lowercase"),
         ({"signed_payload_hash": "a" * 63}, "64-character"),
@@ -170,6 +177,7 @@ def test_v48c_real_crypto_signature_input_is_frozen_and_domain_separated() -> No
 def test_v48c_real_crypto_signature_input_rejects_ambiguous_values(kwargs: dict[str, object], match: str) -> None:
     base: dict[str, object] = {
         "algorithm": "ml-dsa",
+        "standard_profile": default_standard_profile_for_algorithm("ml-dsa"),
         "domain_tag": ORCHESTRATOR_RECEIPT_DOMAIN,
         "signed_payload_hash": PAYLOAD_HASH,
         "key_id": "shield_orchestrator-ml-dsa-v1",
@@ -183,6 +191,7 @@ def test_v48c_real_crypto_signature_input_rejects_ambiguous_values(kwargs: dict[
 def test_v48c_real_crypto_signer_builds_b64u_entry_without_test_fallback() -> None:
     entry = build_signature_entry_with_real_backend(
         algorithm="ml-dsa",
+        standard_profile=default_standard_profile_for_algorithm("ml-dsa"),
         domain_tag=ORCHESTRATOR_RECEIPT_DOMAIN,
         signed_payload_hash=PAYLOAD_HASH,
         key_id="shield_orchestrator-ml-dsa-v1",
@@ -266,6 +275,7 @@ def test_v48g_real_crypto_backend_wrapper_catches_native_exceptions_and_preserve
     with pytest.raises(ShieldV4RealCryptoBackendError, match="algorithm discovery failed closed") as algorithm_error:
         build_signature_entry_with_real_backend(
             algorithm="ml-dsa",
+            standard_profile=default_standard_profile_for_algorithm("ml-dsa"),
             domain_tag=ORCHESTRATOR_RECEIPT_DOMAIN,
             signed_payload_hash=PAYLOAD_HASH,
             key_id="shield_orchestrator-ml-dsa-v1",
@@ -278,6 +288,7 @@ def test_v48g_real_crypto_backend_wrapper_catches_native_exceptions_and_preserve
     with pytest.raises(ShieldV4RealCryptoBackendError, match="sign failed closed") as sign_error:
         build_signature_entry_with_real_backend(
             algorithm="ml-dsa",
+            standard_profile=default_standard_profile_for_algorithm("ml-dsa"),
             domain_tag=ORCHESTRATOR_RECEIPT_DOMAIN,
             signed_payload_hash=PAYLOAD_HASH,
             key_id="shield_orchestrator-ml-dsa-v1",
@@ -294,6 +305,7 @@ def test_v48g_real_crypto_backend_wrapper_catches_native_exceptions_and_preserve
     with pytest.raises(ShieldV4RealCryptoBackendError, match="backend already failed closed") as wrapped_error:
         build_signature_entry_with_real_backend(
             algorithm="ml-dsa",
+            standard_profile=default_standard_profile_for_algorithm("ml-dsa"),
             domain_tag=ORCHESTRATOR_RECEIPT_DOMAIN,
             signed_payload_hash=PAYLOAD_HASH,
             key_id="shield_orchestrator-ml-dsa-v1",
