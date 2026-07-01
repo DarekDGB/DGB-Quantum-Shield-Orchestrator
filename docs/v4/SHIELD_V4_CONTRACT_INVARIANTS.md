@@ -171,9 +171,10 @@ A key authorized for one role must fail closed when used for another role.
 
 Every signature entry must carry:
 
+- `algorithm`
+- `standard_profile`
 - `key_id`
 - `key_version`
-- `algorithm`
 
 Every key registry entry must carry:
 
@@ -219,6 +220,11 @@ FN-DSA means FN-DSA, based on Falcon.
 
 FN-DSA must never satisfy or override a missing or failed ML-DSA requirement.
 
+For V4.8H, the only supported FN-DSA profile is
+`fips206-draft-falcon1024-v1` (Falcon-1024). The profile is part of the
+per-signature signed message. Unsupported profiles or profile changes after
+signing fail closed.
+
 The embedded `signature_policy` must be covered by the signature.
 
 The verifier-required policy is authoritative. If the embedded policy is weaker than the verifier-required policy, verification fails closed.
@@ -240,6 +246,7 @@ Rules:
 - wrong key id fails closed
 - wrong key version fails closed
 - wrong policy fails closed
+- wrong or unsupported `standard_profile` fails closed
 - cross-receipt signature splicing fails closed
 
 ## V4-INV-013 — Algorithm Naming Accuracy
