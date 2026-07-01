@@ -91,6 +91,7 @@ def _resign_bundle_with_real_material(
         entry.update(
             build_signature_entry_with_real_backend(
                 algorithm=entry["algorithm"],
+                standard_profile=entry["standard_profile"],
                 domain_tag=entry["domain_tag"],
                 signed_payload_hash=entry["signed_payload_hash"],
                 key_id=key["key_id"],
