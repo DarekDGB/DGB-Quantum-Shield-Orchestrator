@@ -6,6 +6,7 @@ import hmac
 import pytest
 
 from shield_orchestrator.v4.canonical_json import ORCHESTRATOR_RECEIPT_DOMAIN
+from shield_orchestrator.v4.crypto_algorithms import default_standard_profile_for_algorithm
 from shield_orchestrator.v4.key_registry import build_test_registry, load_key_registry
 from shield_orchestrator.v4.signature_bundle import build_signature_bundle, validate_signature_bundle_shape, verify_signature_bundle
 
@@ -15,7 +16,7 @@ PAYLOAD_HASH = "a" * 64
 def _test_verifier(entry, key):
     expected = hmac.new(
         key.public_key.encode("utf-8"),
-        f"{entry['domain_tag']}|{entry['signed_payload_hash']}|{entry['algorithm']}|{entry['key_id']}|{entry['key_version']}".encode("utf-8"),
+        f"{entry['domain_tag']}|{entry['signed_payload_hash']}|{entry['algorithm']}|{entry['standard_profile']}|{entry['key_id']}|{entry['key_version']}".encode("utf-8"),
         "sha256",
     ).hexdigest()
     return hmac.compare_digest(entry["signature"], expected)
@@ -25,13 +26,15 @@ def sig(algorithm: str) -> dict[str, object]:
     key_id = f"test-shield_orchestrator-{algorithm}-v1"
     key_version = 1
     public_key = f"TEST-ONLY-PUBLIC-shield_orchestrator-{algorithm}-v1"
+    standard_profile = default_standard_profile_for_algorithm(algorithm)
     signature = hmac.new(
         public_key.encode("utf-8"),
-        f"{ORCHESTRATOR_RECEIPT_DOMAIN}|{PAYLOAD_HASH}|{algorithm}|{key_id}|{key_version}".encode("utf-8"),
+        f"{ORCHESTRATOR_RECEIPT_DOMAIN}|{PAYLOAD_HASH}|{algorithm}|{standard_profile}|{key_id}|{key_version}".encode("utf-8"),
         "sha256",
     ).hexdigest()
     return {
         "algorithm": algorithm,
+        "standard_profile": standard_profile,
         "key_id": key_id,
         "key_version": key_version,
         "signed_payload_hash": PAYLOAD_HASH,
@@ -95,6 +98,8 @@ def test_v4_signature_bundle_negative_matrix():
     mutations = [
         lambda item: item.pop("algorithm"),
         lambda item: item.__setitem__("algorithm", "pqc-falcon"),
+        lambda item: item.__setitem__("standard_profile", "fips206-draft-falcon512-v1"),
+        lambda item: item.__setitem__("standard_profile", ""),
         lambda item: item.__setitem__("key_id", ""),
         lambda item: item.__setitem__("key_version", False),
         lambda item: item.__setitem__("signed_payload_hash", "b" * 64),
