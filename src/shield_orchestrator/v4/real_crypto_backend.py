@@ -6,14 +6,17 @@ from collections.abc import Callable
 from typing import Any, Protocol, TypeVar
 
 from shield_orchestrator.v4.canonical_json import COMPONENT_VERDICT_DOMAIN, ORCHESTRATOR_RECEIPT_DOMAIN
-from shield_orchestrator.v4.crypto_algorithms import SIGNATURE_POLICY_V1
+from shield_orchestrator.v4.crypto_algorithms import (
+    SIGNATURE_POLICY_V1,
+    require_supported_standard_profile as _policy_require_supported_standard_profile,
+)
 from shield_orchestrator.v4.key_registry import KeyRegistryEntry
 
 REAL_CRYPTO_SIGNATURE_INPUT_PREFIX = "DGB-SHIELD-V4-REAL-CRYPTO-SIGNATURE-INPUT"
 REAL_SIGNATURE_ENCODING_PREFIX = "b64u:"
 _BASE64URL_ALPHABET = frozenset("ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-_")
 _ALLOWED_DOMAIN_TAGS = frozenset({COMPONENT_VERDICT_DOMAIN, ORCHESTRATOR_RECEIPT_DOMAIN})
-_SIGNATURE_ENTRY_FIELDS = frozenset({"algorithm", "key_id", "key_version", "signed_payload_hash", "domain_tag", "signature"})
+_SIGNATURE_ENTRY_FIELDS = frozenset({"algorithm", "standard_profile", "key_id", "key_version", "signed_payload_hash", "domain_tag", "signature"})
 _T = TypeVar("_T")
 _TEST_ONLY_MARKERS = ("test-only",)
 _TEST_ONLY_PREFIXES = ("test-",)
@@ -90,6 +93,18 @@ def _require_supported_algorithm(value: Any) -> str:
     return algorithm
 
 
+
+
+def _require_supported_standard_profile(*, algorithm: str, standard_profile: str) -> str:
+    try:
+        return _policy_require_supported_standard_profile(
+            algorithm=algorithm,
+            standard_profile=standard_profile,
+        )
+    except ValueError as exc:
+        raise ShieldV4RealCryptoBackendError(str(exc)) from exc
+
+
 def _require_hash(value: Any, *, field: str) -> str:
     clean = _require_non_empty_str(value, field=field)
     if len(clean) != 64:
@@ -163,6 +178,7 @@ def decode_binary_signature_material(encoded: Any, *, field: str = "signature") 
 def build_real_crypto_signature_input(
     *,
     algorithm: str,
+    standard_profile: str,
     domain_tag: str,
     signed_payload_hash: str,
     key_id: str,
@@ -172,13 +188,18 @@ def build_real_crypto_signature_input(
 
     The signed payload hash is already domain-separated over the canonical JSON
     payload. The backend message binds that hash to the signature role, algorithm,
-    key id, and key version so entries cannot be spliced across bundles.
+    standard profile, key id, and key version so entries cannot be spliced across
+    bundles or reinterpreted under another FN-DSA/Falcon profile.
     """
 
     clean_algorithm = _require_supported_algorithm(algorithm)
     clean_domain = _require_non_empty_str(domain_tag, field="domain_tag")
     if clean_domain not in _ALLOWED_DOMAIN_TAGS:
         raise ShieldV4RealCryptoBackendError("domain_tag must be a Shield v4 signing domain")
+    clean_profile = _require_supported_standard_profile(
+        algorithm=clean_algorithm,
+        standard_profile=_require_non_empty_str(standard_profile, field="standard_profile"),
+    )
     clean_hash = _require_hash(signed_payload_hash, field="signed_payload_hash")
     clean_key_id = _require_non_empty_str(key_id, field="key_id")
     clean_key_version = _require_positive_int(key_version, field="key_version")
@@ -188,6 +209,7 @@ def build_real_crypto_signature_input(
             clean_domain,
             clean_hash,
             clean_algorithm,
+            clean_profile,
             clean_key_id,
             str(clean_key_version),
         )
@@ -206,6 +228,7 @@ def _require_backend_supports_algorithm(backend: ShieldV4RealCryptoBackend, algo
 def build_signature_entry_with_real_backend(
     *,
     algorithm: str,
+    standard_profile: str,
     domain_tag: str,
     signed_payload_hash: str,
     key_id: str,
@@ -217,11 +240,16 @@ def build_signature_entry_with_real_backend(
 
     clean_algorithm = _require_supported_algorithm(algorithm)
     clean_domain = _require_non_empty_str(domain_tag, field="domain_tag")
+    clean_profile = _require_supported_standard_profile(
+        algorithm=clean_algorithm,
+        standard_profile=_require_non_empty_str(standard_profile, field="standard_profile"),
+    )
     clean_hash = _require_hash(signed_payload_hash, field="signed_payload_hash")
     clean_key_id = _require_non_empty_str(key_id, field="key_id")
     clean_key_version = _require_positive_int(key_version, field="key_version")
     message = build_real_crypto_signature_input(
         algorithm=clean_algorithm,
+        standard_profile=clean_profile,
         domain_tag=clean_domain,
         signed_payload_hash=clean_hash,
         key_id=clean_key_id,
@@ -241,6 +269,7 @@ def build_signature_entry_with_real_backend(
     decode_binary_signature_material(clean_signature, field="signature")
     return {
         "algorithm": clean_algorithm,
+        "standard_profile": clean_profile,
         "key_id": clean_key_id,
         "key_version": clean_key_version,
         "signed_payload_hash": clean_hash,
@@ -263,6 +292,10 @@ def verify_signature_entry_with_real_backend(
         raise ShieldV4RealCryptoBackendError("signature entry fields must match required schema")
     reject_test_only_key_material(key)
     algorithm = _require_supported_algorithm(entry.get("algorithm"))
+    standard_profile = _require_supported_standard_profile(
+        algorithm=algorithm,
+        standard_profile=_require_non_empty_str(entry.get("standard_profile"), field="standard_profile"),
+    )
     key_id = _require_non_empty_str(entry.get("key_id"), field="key_id")
     key_version = _require_positive_int(entry.get("key_version"), field="key_version")
     if (key.algorithm, key.key_id, key.key_version) != (algorithm, key_id, key_version):
@@ -272,6 +305,7 @@ def verify_signature_entry_with_real_backend(
     _require_backend_supports_algorithm(backend, algorithm)
     message = build_real_crypto_signature_input(
         algorithm=algorithm,
+        standard_profile=standard_profile,
         domain_tag=_require_non_empty_str(entry.get("domain_tag"), field="domain_tag"),
         signed_payload_hash=_require_hash(entry.get("signed_payload_hash"), field="signed_payload_hash"),
         key_id=key_id,
