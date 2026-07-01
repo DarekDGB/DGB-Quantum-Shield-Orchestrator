@@ -5,7 +5,7 @@ from typing import Any
 
 from shield_orchestrator.v4 import CANONICALIZATION_PROFILE, POLICY_VERSION, VERDICT_SCHEMA_VERSION
 from shield_orchestrator.v4.canonical_json import COMPONENT_VERDICT_DOMAIN, signed_payload_hash
-from shield_orchestrator.v4.crypto_algorithms import SIGNATURE_POLICY_V1, require_supported_algorithm
+from shield_orchestrator.v4.crypto_algorithms import SIGNATURE_POLICY_V1, default_standard_profile_for_algorithm, require_supported_algorithm
 from shield_orchestrator.v4.key_registry import KeyRegistry, KeyRegistryEntry, load_key_registry
 from shield_orchestrator.v4.signature_bundle import SignatureVerifier, verify_signature_bundle
 
@@ -176,12 +176,14 @@ def build_test_component_signature_entry(*, component_id: str, algorithm: str, s
     clean_algorithm = require_supported_algorithm(_require_non_empty_str(algorithm, field="algorithm"))
     clean_hash = _require_hash(signed_hash, field="signed_hash")
     key_id = f"test-{role}-{clean_algorithm}-v1"
+    standard_profile = default_standard_profile_for_algorithm(clean_algorithm)
     public_key = f"TEST-ONLY-PUBLIC-{role}-{clean_algorithm}-v1"
     signature = hashlib.sha256(
-        f"{TEST_ONLY_SIGNATURE_PREFIXES[component_id]}\n{public_key}\n{clean_algorithm}\n{clean_hash}".encode("utf-8")
+        f"{TEST_ONLY_SIGNATURE_PREFIXES[component_id]}\n{public_key}\n{clean_algorithm}\n{standard_profile}\n{clean_hash}".encode("utf-8")
     ).hexdigest()
     return {
         "algorithm": clean_algorithm,
+        "standard_profile": standard_profile,
         "key_id": key_id,
         "key_version": 1,
         "signed_payload_hash": clean_hash,
@@ -198,7 +200,7 @@ def verify_test_only_component_signature(entry: dict[str, Any], key: KeyRegistry
     if component_id not in TEST_ONLY_SIGNATURE_PREFIXES:
         return False
     expected = hashlib.sha256(
-        f"{TEST_ONLY_SIGNATURE_PREFIXES[component_id]}\n{key.public_key}\n{entry['algorithm']}\n{entry['signed_payload_hash']}".encode("utf-8")
+        f"{TEST_ONLY_SIGNATURE_PREFIXES[component_id]}\n{key.public_key}\n{entry['algorithm']}\n{entry['standard_profile']}\n{entry['signed_payload_hash']}".encode("utf-8")
     ).hexdigest()
     return entry["signature"] == expected
 
