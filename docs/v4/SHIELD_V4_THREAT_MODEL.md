@@ -93,6 +93,8 @@ Assume an attacker may attempt to:
 - weaken the signature policy
 - strip ML-DSA and present only classical signatures
 - present FN-DSA evidence as if it satisfies ML-DSA
+- flip an FN-DSA `standard_profile` after signing
+- reinterpret a draft Falcon-1024 profile as another Falcon/FN-DSA profile
 - duplicate algorithm entries in a signature bundle
 - include unknown algorithms
 - trigger canonicalization ambiguity
@@ -207,7 +209,21 @@ Controls:
 - every signature signs the same domain-separated `signed_payload_hash`.
 - duplicate algorithms fail closed.
 - unknown algorithms fail closed.
-- key id, key version, algorithm, role, policy, and payload hash are checked together.
+- key id, key version, algorithm, role, policy, profile, and payload hash are checked together.
+
+### FN-DSA Profile Confusion
+
+Threat: a valid `fn-dsa` signature is re-labelled from its authenticated draft
+Falcon-1024 profile to another draft or future final profile.
+
+Controls:
+
+- every signature entry carries `standard_profile`.
+- the real-signature input signs `standard_profile`, not just the payload hash.
+- V4.8H allow-lists `fips206-draft-falcon1024-v1` for `fn-dsa`.
+- unsupported profiles fail closed.
+- profile changes after signing fail closed.
+- FN-DSA remains optional evidence and cannot rescue classical or ML-DSA failure.
 
 ### Metadata Authority Injection
 
@@ -279,6 +295,8 @@ Minimum negative tests:
 - valid component signatures but missing required component -> DENY
 - valid component signature from wrong component role -> DENY
 - FN-DSA valid but ML-DSA invalid -> DENY
+- FN-DSA unsupported `standard_profile` -> DENY
+- FN-DSA `standard_profile` changed after signing -> DENY
 - classical valid but ML-DSA invalid -> DENY
 - ML-DSA valid but classical invalid -> DENY
 - domain tag mismatch -> DENY
