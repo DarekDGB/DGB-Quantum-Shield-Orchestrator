@@ -8,11 +8,17 @@ This document records the first frozen Shield v4 Orchestrator Known-Answer Test 
 
 The vector is TEST-ONLY. It does not contain production private keys. It does not claim production ML-DSA or FN-DSA cryptography. It freezes the Shield v4 contract envelope, canonical bytes, hash binding, key-role binding, policy binding, and fail-closed verification shape.
 
-## Vector Location
+## Vector Locations
 
 ```text
 tests/fixtures/v4/orchestrator_receipt_policy_v1_kat.json
+tests/fixtures/v4/fn_dsa_signed_message_draft_profile_kat.json
 ```
+
+The second vector was added in V4.8H-A. It freezes the exact FN-DSA/Falcon-1024
+real-signature input bytes, including authenticated `standard_profile`, so future
+component and AdamantineOS implementations cannot drift from Orchestrator byte
+construction.
 
 ## Frozen Values
 
@@ -59,6 +65,14 @@ Optional evidence path:
 fn-dsa
 ```
 
+V4.8H FN-DSA draft profile:
+
+```text
+standard_profile: fips206-draft-falcon1024-v1
+Falcon parameter set: Falcon-1024
+Security level note: Falcon-1024 is NIST security level 5; ML-DSA-65 remains required.
+```
+
 ## Important Algorithm Wording
 
 ML-DSA means ML-DSA, formerly CRYSTALS-Dilithium.
@@ -66,6 +80,10 @@ ML-DSA means ML-DSA, formerly CRYSTALS-Dilithium.
 FN-DSA means FN-DSA, based on Falcon.
 
 FN-DSA is not ML-DSA and cannot satisfy the ML-DSA requirement.
+
+The V4.8H FN-DSA vector is draft-profile evidence only. It must not be reused as
+a final FIPS 206 proof without a later final-profile backend, registry keys, and
+KAT refresh.
 
 ## Authority Boundary
 
