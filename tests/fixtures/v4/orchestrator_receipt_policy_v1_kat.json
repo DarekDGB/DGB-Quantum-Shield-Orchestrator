@@ -17,16 +17,18 @@
         "domain_tag": "DGB-SHIELD-V4-ORCH-RECEIPT:shield.receipt.v2:policy.v1",
         "key_id": "test-shield_orchestrator-classical-ed25519-v1",
         "key_version": 1,
-        "signature": "881017e866216f1eb84d20df669a569257a39ce25d49e081052141b666f326f5",
-        "signed_payload_hash": "d4e4c277f99e9320a27a3502e3b26196638c1e4d8bdf5dcee0ad533559240ca3"
+        "signature": "103abb113810cb58b7bba389288312d216e8bc6b432cf9dc67c9c83769f4443f",
+        "signed_payload_hash": "d4e4c277f99e9320a27a3502e3b26196638c1e4d8bdf5dcee0ad533559240ca3",
+        "standard_profile": "rfc8032-ed25519-v1"
       },
       {
         "algorithm": "ml-dsa",
         "domain_tag": "DGB-SHIELD-V4-ORCH-RECEIPT:shield.receipt.v2:policy.v1",
         "key_id": "test-shield_orchestrator-ml-dsa-v1",
         "key_version": 1,
-        "signature": "68d35eecae0dc2db777e7a9189fb92affeaf6da05ec1f2fd8ba4d7adb1987731",
-        "signed_payload_hash": "d4e4c277f99e9320a27a3502e3b26196638c1e4d8bdf5dcee0ad533559240ca3"
+        "signature": "fac33afdb30770d2f3fbdec6d4638679f2137a2ca1b033c1ffca40bd97f084a9",
+        "signed_payload_hash": "d4e4c277f99e9320a27a3502e3b26196638c1e4d8bdf5dcee0ad533559240ca3",
+        "standard_profile": "fips204-ml-dsa-65-v1"
       }
     ]
   },
