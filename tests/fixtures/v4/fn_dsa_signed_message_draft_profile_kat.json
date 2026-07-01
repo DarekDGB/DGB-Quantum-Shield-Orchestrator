@@ -1,0 +1,17 @@
+{
+  "algorithm": "fn-dsa",
+  "author_attribution": "DarekDGB",
+  "domain_tag": "DGB-SHIELD-V4-ORCH-RECEIPT:shield.receipt.v2:policy.v1",
+  "falcon_parameter_set": "Falcon-1024",
+  "key_id": "shield_orchestrator-fn-dsa-v1",
+  "key_version": 1,
+  "message_hex": "4447422d534849454c442d56342d5245414c2d43525950544f2d5349474e41545552452d494e5055540a4447422d534849454c442d56342d4f5243482d524543454950543a736869656c642e726563656970742e76323a706f6c6963792e76310a626262626262626262626262626262626262626262626262626262626262626262626262626262626262626262626262626262626262626262626262626262620a666e2d6473610a666970733230362d64726166742d66616c636f6e313032342d76310a736869656c645f6f7263686573747261746f722d666e2d6473612d76310a31",
+  "message_prefix": "DGB-SHIELD-V4-REAL-CRYPTO-SIGNATURE-INPUT",
+  "message_sha256": "fc6075df72b6519c8207aa3bfe5f571459edc3eb88321179da11d8dd4695d90c",
+  "message_utf8": "DGB-SHIELD-V4-REAL-CRYPTO-SIGNATURE-INPUT\nDGB-SHIELD-V4-ORCH-RECEIPT:shield.receipt.v2:policy.v1\nbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb\nfn-dsa\nfips206-draft-falcon1024-v1\nshield_orchestrator-fn-dsa-v1\n1",
+  "schema_version": "shield.v4.8h.fn_dsa_signed_message_kat.v1",
+  "security_level_note": "Falcon-1024 is NIST security level 5; ML-DSA-65 remains the required level-3 PQC path.",
+  "signed_payload_hash": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+  "standard_profile": "fips206-draft-falcon1024-v1",
+  "warning": "TEST-ONLY signed-message KAT. This is not a production FN-DSA/FIPS 206 final proof."
+}
