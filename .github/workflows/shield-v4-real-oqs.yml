@@ -1,4 +1,4 @@
-name: Shield v4 Real OQS ML-DSA Proof
+name: Shield v4 Real OQS ML-DSA and Falcon-1024 Proof
 
 on:
   workflow_dispatch:
@@ -9,6 +9,8 @@ on:
       - "src/shield_orchestrator/v4/**"
       - "tests/test_v4_oqs_mldsa_backend.py"
       - "tests/test_v48g_real_oqs_mldsa_backend.py"
+      - "tests/test_v48h_e_oqs_falcon_backend.py"
+      - "tests/test_v48h_e_real_oqs_falcon_backend.py"
       - "scripts/assert_real_oqs_junit_not_skipped.py"
       - "docs/v4/SHIELD_V4_REAL_CRYPTO_BACKEND.md"
       - "docs/v4/SHIELD_V4_THREAT_MODEL.md"
@@ -19,6 +21,8 @@ on:
       - "src/shield_orchestrator/v4/**"
       - "tests/test_v4_oqs_mldsa_backend.py"
       - "tests/test_v48g_real_oqs_mldsa_backend.py"
+      - "tests/test_v48h_e_oqs_falcon_backend.py"
+      - "tests/test_v48h_e_real_oqs_falcon_backend.py"
       - "scripts/assert_real_oqs_junit_not_skipped.py"
       - "docs/v4/SHIELD_V4_REAL_CRYPTO_BACKEND.md"
       - "docs/v4/SHIELD_V4_THREAT_MODEL.md"
@@ -29,11 +33,12 @@ permissions:
   contents: read
 
 jobs:
-  real-oqs-mldsa:
+  real-oqs-mldsa-falcon1024:
     runs-on: ubuntu-latest
 
     env:
       SHIELD_V4_REAL_OQS: "1"
+      SHIELD_V4_REAL_OQS_FALCON: "1"
       LD_LIBRARY_PATH: "/usr/local/lib"
 
     steps:
@@ -69,10 +74,11 @@ jobs:
           python -m pip install pytest
           python -m pip install "git+https://github.com/open-quantum-safe/liboqs-python.git"
 
-      - name: Run gated real liboqs ML-DSA proof
+      - name: Run gated real liboqs ML-DSA and Falcon-1024 proofs
         run: |
           python -m pytest --override-ini addopts='' \
             tests/test_v48g_real_oqs_mldsa_backend.py \
+            tests/test_v48h_e_real_oqs_falcon_backend.py \
             -q --junitxml=shield-v4-real-oqs-results.xml
 
       - name: Assert real liboqs proof was not skipped
