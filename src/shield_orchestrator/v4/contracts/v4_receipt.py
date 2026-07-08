@@ -5,7 +5,7 @@ from typing import Any
 
 from shield_orchestrator.v4 import CANONICALIZATION_PROFILE, POLICY_VERSION, RECEIPT_SCHEMA_VERSION
 from shield_orchestrator.v4.canonical_json import ORCHESTRATOR_RECEIPT_DOMAIN, signed_payload_hash, to_canonical_json
-from shield_orchestrator.v4.crypto_algorithms import SIGNATURE_POLICY_V1
+from shield_orchestrator.v4.crypto_algorithms import ALGORITHM_STANDARD_PROFILES, SIGNATURE_POLICY_V1
 from shield_orchestrator.v4.key_registry import KeyRegistry, load_key_registry
 from shield_orchestrator.v4.signature_bundle import SignatureVerifier, verify_signature_bundle
 
@@ -64,6 +64,17 @@ FORBIDDEN_METADATA_AUTHORITY_KEYS = frozenset(
         "override",
         "sign",
         "trusted",
+    }
+)
+
+COMPONENT_SIGNATURE_RESULT_FIELDS = frozenset(
+    {
+        "component_id",
+        "component_role",
+        "verified",
+        "verified_algorithms",
+        "verified_standard_profiles",
+        "signature_policy",
     }
 )
 
@@ -145,22 +156,35 @@ def _validate_component_signature_results_for_receipt(results: Any) -> list[dict
     for result in results:
         if not isinstance(result, dict):
             raise ValueError("component signature result must be dict")
+        if set(result.keys()) != COMPONENT_SIGNATURE_RESULT_FIELDS:
+            raise ValueError("component signature result fields must match required schema")
         component_id = _require_non_empty_str(result.get("component_id"), field="component_id")
         if component_id not in COMPONENT_ROLES:
             raise ValueError("unsupported component signature result")
         if component_id in seen:
             raise ValueError("duplicate component signature result")
         seen.add(component_id)
+        if result.get("component_role") != COMPONENT_ROLES[component_id]:
+            raise ValueError("component signature result role mismatch")
         if result.get("verified") is not True:
             raise ValueError("component signature result must be verified")
-        if "component_role" in result and result["component_role"] != COMPONENT_ROLES[component_id]:
-            raise ValueError("component signature result role mismatch")
-        if "signature_policy" in result and result["signature_policy"] != POLICY_VERSION:
+        if result.get("signature_policy") != POLICY_VERSION:
             raise ValueError("component signature result policy mismatch")
-        if "verified_algorithms" in result:
-            algorithms = result["verified_algorithms"]
-            if not isinstance(algorithms, list) or set((str(item) for item in algorithms)) < {"classical-ed25519", "ml-dsa"}:
-                raise ValueError("component signature result missing required algorithms")
+        algorithms = result["verified_algorithms"]
+        profiles = result["verified_standard_profiles"]
+        if not isinstance(algorithms, list) or not algorithms or any(not isinstance(item, str) or not item for item in algorithms):
+            raise ValueError("component signature result algorithms must be non-empty strings")
+        if len(set(algorithms)) != len(algorithms):
+            raise ValueError("component signature result duplicate algorithm")
+        if set(algorithms) < {"classical-ed25519", "ml-dsa"}:
+            raise ValueError("component signature result missing required algorithms")
+        if any(algorithm not in ALGORITHM_STANDARD_PROFILES for algorithm in algorithms):
+            raise ValueError("component signature result contains unsupported algorithm")
+        if not isinstance(profiles, list) or len(profiles) != len(algorithms) or any(not isinstance(item, str) or not item for item in profiles):
+            raise ValueError("component signature result profiles must match algorithms")
+        for algorithm, profile in zip(algorithms, profiles, strict=True):
+            if profile not in ALGORITHM_STANDARD_PROFILES[algorithm]:
+                raise ValueError("component signature result contains unsupported standard_profile")
         checked.append(dict(result))
     return checked
 
