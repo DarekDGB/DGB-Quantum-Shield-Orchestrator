@@ -85,11 +85,31 @@ The mechanism is deliberately locked for this backend. A caller cannot silently 
 `ML-DSA-44`, `ML-DSA-87`, Falcon/FN-DSA, or another mechanism behind the Shield
 policy name.
 
+## OQS Falcon-1024 mapping
+
+V4.8H-E adds an optional OQS backend for live FN-DSA draft-profile evidence:
+
+```text
+src/shield_orchestrator/v4/oqs_falcon_backend.py
+tests/test_v48h_e_oqs_falcon_backend.py
+tests/test_v48h_e_real_oqs_falcon_backend.py
+```
+
+The backend mapping is locked as:
+
+```text
+Shield algorithm: fn-dsa
+standard_profile: fips206-draft-falcon1024-v1
+OQS mechanism:    Falcon-1024
+```
+
+This is optional hybrid evidence only. It does not make FN-DSA required, does not rescue failed `classical-ed25519` or `ml-dsa`, does not sign transactions, does not broadcast, and does not change DigiByte consensus. It is draft Falcon-1024 profile evidence only, not a final FIPS 206 production claim.
+
 ## CI proof levels and gated real-liboqs job
 
 Default package CI proves the real-backend adapter interface, binary-material parsing,
 fail-closed exception hierarchy, bundle binding, and cross-repo wiring with deterministic
-backends. That default CI does not claim to execute live liboqs ML-DSA.
+backends. That default CI does not claim to execute live liboqs ML-DSA or live Falcon-1024.
 
 Live liboqs ML-DSA proof is intentionally optional and gated so normal CI does not gain a
 hard OQS/liboqs dependency. The dedicated job must set `SHIELD_V4_REAL_OQS=1`, install
@@ -107,6 +127,18 @@ The guard fails if the real-OQS job collects zero tests, skips any testcase, or 
 failure/error. A public claim that live liboqs ML-DSA verified through this backend requires
 that gated job to pass with `skipped == 0`; release-grade real-backend proof remains a
 V4.10 release gate.
+
+V4.8H-E extends the dedicated PQC workflow so it sets both `SHIELD_V4_REAL_OQS=1` and `SHIELD_V4_REAL_OQS_FALCON=1`, then runs the ML-DSA proof and the Falcon-1024 proof in the same guarded JUnit report:
+
+```text
+python -m pytest --override-ini addopts='' \
+  tests/test_v48g_real_oqs_mldsa_backend.py \
+  tests/test_v48h_e_real_oqs_falcon_backend.py \
+  -q --junitxml=shield-v4-real-oqs-results.xml
+python scripts/assert_real_oqs_junit_not_skipped.py shield-v4-real-oqs-results.xml
+```
+
+A public live Falcon-1024 Orchestrator claim requires that dedicated workflow to finish green with `skipped == 0`, `failures == 0`, and `errors == 0` for the guarded report.
 
 ## Frozen real-signature input
 
