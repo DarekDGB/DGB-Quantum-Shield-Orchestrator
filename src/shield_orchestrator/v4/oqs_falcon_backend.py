@@ -93,6 +93,7 @@ class OqsFalcon1024Backend:
         details: Any,
         detail_key: str,
         field: str,
+        allow_shorter: bool = False,
     ) -> None:
         if details is None:
             return
@@ -103,7 +104,12 @@ class OqsFalcon1024Backend:
             return
         if isinstance(expected, bool) or not isinstance(expected, int) or expected <= 0:
             raise ShieldV4RealCryptoBackendError(f"OQS Falcon-1024 {detail_key} must be a positive integer")
-        if len(value) != expected:
+        actual = len(value)
+        if allow_shorter:
+            if actual > expected:
+                raise ShieldV4RealCryptoBackendError(f"{field} byte length must be <= {expected} for OQS Falcon-1024")
+            return
+        if actual != expected:
             raise ShieldV4RealCryptoBackendError(f"{field} byte length must be {expected} for OQS Falcon-1024")
 
     def _resolve_private_key(self, private_key_reference: str) -> bytes:
@@ -160,6 +166,7 @@ class OqsFalcon1024Backend:
                     details=details,
                     detail_key="length_signature",
                     field="signature",
+                    allow_shorter=True,
                 )
                 verified = verifier.verify(message_bytes, signature_bytes, public_key_bytes)
         except ShieldV4RealCryptoBackendError:
