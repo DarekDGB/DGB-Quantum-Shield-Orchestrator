@@ -42,7 +42,26 @@ def component_verdicts() -> list[dict[str, object]]:
 
 
 def component_signature_results() -> list[dict[str, object]]:
-    return [{"component_id": component, "verified": True} for component in reversed(SUPPORTED_COMPONENTS)]
+    return [
+        {
+            "component_id": component,
+            "component_role": {
+                "adn": "shield_component_adn",
+                "dqsn": "shield_component_dqsn",
+                "guardian_wallet": "shield_component_guardian_wallet",
+                "qwg": "shield_component_qwg",
+                "sentinel_ai": "shield_component_sentinel_ai",
+            }[component],
+            "verified": True,
+            "verified_algorithms": ["classical-ed25519", "ml-dsa"],
+            "verified_standard_profiles": [
+                default_standard_profile_for_algorithm("classical-ed25519"),
+                default_standard_profile_for_algorithm("ml-dsa"),
+            ],
+            "signature_policy": "policy.v1",
+        }
+        for component in reversed(SUPPORTED_COMPONENTS)
+    ]
 
 
 def signature_for(algorithm: str, payload_hash: str) -> dict[str, object]:
@@ -95,8 +114,8 @@ def signed_receipt() -> dict[str, object]:
 
 def test_v4_receipt_envelope_validates_and_locks_stable_kat_hashes():
     receipt = signed_receipt()
-    assert receipt["receipt_hash"] == "4dcf7fc66317e8f06fbd24edf8c839a7ddf0d38b88b70af321cc7732d0ab46f5"
-    assert receipt["signed_payload_hash"] == "d4e4c277f99e9320a27a3502e3b26196638c1e4d8bdf5dcee0ad533559240ca3"
+    assert receipt["receipt_hash"] == "9b46e013b5fdcc70df190219fa19548698f48909ce000ccdb64f9062cf4860b6"
+    assert receipt["signed_payload_hash"] == "9004b38d7c55f7a2ed7b75b7b129279a64874c050b8c3b944b94e6dd8e80c8ad"
     verified = validate_receipt_envelope(
         receipt,
         expected_context_hash=CTX,
@@ -237,6 +256,54 @@ def test_v4_receipt_rejects_registry_version_mismatch_after_rehash():
             verification_time="2026-06-21T00:01:00Z",
             verifier=_test_verifier,
         )
+
+
+def test_v48h_e_component_signature_result_profiles_are_schema_locked():
+    base_kwargs = {
+        "request_id": "req-v48h-e",
+        "context_hash": CTX,
+        "freshness_nonce": "nonce-v48h-e",
+        "not_before": "2026-06-21T00:00:00Z",
+        "not_after": "2026-06-21T00:05:00Z",
+        "component_verdicts": component_verdicts(),
+        "component_signature_results": component_signature_results(),
+        "final_outcome": "ALLOW",
+        "dominant_reason_ids": ["ORCH_OK_ALL_COMPONENTS_ALLOW"],
+        "key_registry_version": 1,
+        "adamantineos_handoff": {"handoff_allowed": True},
+    }
+
+    missing_profile_field = copy.deepcopy(base_kwargs)
+    missing_profile_field["component_signature_results"][0].pop("verified_standard_profiles")
+    with pytest.raises(ValueError, match="component signature result fields"):
+        build_unsigned_receipt_payload(**missing_profile_field)
+
+    profile_mismatch = copy.deepcopy(base_kwargs)
+    profile_mismatch["component_signature_results"][0]["verified_algorithms"] = [
+        "classical-ed25519",
+        "ml-dsa",
+        "fn-dsa",
+    ]
+    profile_mismatch["component_signature_results"][0]["verified_standard_profiles"] = [
+        default_standard_profile_for_algorithm("classical-ed25519"),
+        default_standard_profile_for_algorithm("ml-dsa"),
+        "fips206-final-falcon1024-v1",
+    ]
+    with pytest.raises(ValueError, match="unsupported standard_profile"):
+        build_unsigned_receipt_payload(**profile_mismatch)
+
+    profile_omitted = copy.deepcopy(base_kwargs)
+    profile_omitted["component_signature_results"][0]["verified_algorithms"] = [
+        "classical-ed25519",
+        "ml-dsa",
+        "fn-dsa",
+    ]
+    profile_omitted["component_signature_results"][0]["verified_standard_profiles"] = [
+        default_standard_profile_for_algorithm("classical-ed25519"),
+        default_standard_profile_for_algorithm("ml-dsa"),
+    ]
+    with pytest.raises(ValueError, match="profiles must match algorithms"):
+        build_unsigned_receipt_payload(**profile_omitted)
 
 
 def test_v4_kat_fixture_matches_generated_receipt_vector():
