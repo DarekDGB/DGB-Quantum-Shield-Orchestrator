@@ -84,4 +84,7 @@ jobs:
       - name: Assert real liboqs proof was not skipped
         if: always()
         run: |
-          python scripts/assert_real_oqs_junit_not_skipped.py shield-v4-real-oqs-results.xml
+          python scripts/assert_real_oqs_junit_not_skipped.py shield-v4-real-oqs-results.xml \
+            --min-tests 2 \
+            --require-testcase "tests/test_v48g_real_oqs_mldsa_backend.py::test_v48g_real_oqs_mldsa65_orchestrator_backend_round_trip_and_negatives" \
+            --require-testcase "tests/test_v48h_e_real_oqs_falcon_backend.py::test_v48h_e_real_oqs_falcon1024_backend_round_trip_and_negatives"
