@@ -404,3 +404,14 @@ Cryptography proves Shield evidence.
 Cryptography does not grant execution authority.
 
 AdamantineOS remains the final boundary.
+
+## V4.8H-E component summary profile invariant
+
+Every Orchestrator `component_signature_results` entry now carries both:
+
+```text
+verified_algorithms
+verified_standard_profiles
+```
+
+The arrays must align one-for-one. Required algorithms remain `classical-ed25519` and `ml-dsa`; optional `fn-dsa` may be present only with `fips206-draft-falcon1024-v1`. Missing profile summaries, profile omissions, unsupported profiles, duplicate algorithms, or unsupported algorithms are rejected before the final receipt can be accepted as valid evidence.
