@@ -16,6 +16,10 @@
         "verified_algorithms": [
           "classical-ed25519",
           "ml-dsa"
+        ],
+        "verified_standard_profiles": [
+          "rfc8032-ed25519-v1",
+          "fips204-ml-dsa-65-v1"
         ]
       },
       {
@@ -26,6 +30,10 @@
         "verified_algorithms": [
           "classical-ed25519",
           "ml-dsa"
+        ],
+        "verified_standard_profiles": [
+          "rfc8032-ed25519-v1",
+          "fips204-ml-dsa-65-v1"
         ]
       },
       {
@@ -36,6 +44,10 @@
         "verified_algorithms": [
           "classical-ed25519",
           "ml-dsa"
+        ],
+        "verified_standard_profiles": [
+          "rfc8032-ed25519-v1",
+          "fips204-ml-dsa-65-v1"
         ]
       },
       {
@@ -46,6 +58,10 @@
         "verified_algorithms": [
           "classical-ed25519",
           "ml-dsa"
+        ],
+        "verified_standard_profiles": [
+          "rfc8032-ed25519-v1",
+          "fips204-ml-dsa-65-v1"
         ]
       },
       {
@@ -56,6 +72,10 @@
         "verified_algorithms": [
           "classical-ed25519",
           "ml-dsa"
+        ],
+        "verified_standard_profiles": [
+          "rfc8032-ed25519-v1",
+          "fips204-ml-dsa-65-v1"
         ]
       }
     ],
@@ -472,7 +492,7 @@
     "key_registry_version": 2,
     "not_after": "2026-06-21T00:05:00Z",
     "not_before": "2026-06-21T00:00:00Z",
-    "receipt_hash": "20d1b43cea1a5a64561a449f279a0f5df00eeffc74fac08993853fb4e02bd29b",
+    "receipt_hash": "ea5d764d432799eb00ffc6151e19579748bbf2a02b4c522ada436aafef43da58",
     "request_id": "req-v4-integration-allow",
     "schema_version": "shield.receipt.v2",
     "signature_bundle": {
@@ -484,8 +504,8 @@
           "domain_tag": "DGB-SHIELD-V4-ORCH-RECEIPT:shield.receipt.v2:policy.v1",
           "key_id": "shield_orchestrator-classical-ed25519-real-v1",
           "key_version": 1,
-          "signature": "b64u:wJQil-Q9_OlGcBlGVcOApown-xb36Xt4p9xOhBJZH8s",
-          "signed_payload_hash": "5af3f543e464f0688a9c1160c15984634d85aa5e0a87113a38211c78d788caa7",
+          "signature": "b64u:FAQAdjUeKdJ2R2LphTOQ275hbbCB5rbOeKNkPXEl-Rg",
+          "signed_payload_hash": "af4309634cf06a658ce0493b2b3f35dd24e2cbb6d849e7646d909e75106fdd07",
           "standard_profile": "rfc8032-ed25519-v1"
         },
         {
@@ -493,14 +513,14 @@
           "domain_tag": "DGB-SHIELD-V4-ORCH-RECEIPT:shield.receipt.v2:policy.v1",
           "key_id": "shield_orchestrator-ml-dsa-real-v1",
           "key_version": 1,
-          "signature": "b64u:WyOf7MZH9fs-M5QGl65ou6JaMnpwLiqi2dhmNy17PaE",
-          "signed_payload_hash": "5af3f543e464f0688a9c1160c15984634d85aa5e0a87113a38211c78d788caa7",
+          "signature": "b64u:zF3ya07je2o-kYNZrO35Kw5lOvTAQ965NOOQMvmpqPs",
+          "signed_payload_hash": "af4309634cf06a658ce0493b2b3f35dd24e2cbb6d849e7646d909e75106fdd07",
           "standard_profile": "fips204-ml-dsa-65-v1"
         }
       ]
     },
     "signature_policy": "policy.v1",
-    "signed_payload_hash": "5af3f543e464f0688a9c1160c15984634d85aa5e0a87113a38211c78d788caa7"
+    "signed_payload_hash": "af4309634cf06a658ce0493b2b3f35dd24e2cbb6d849e7646d909e75106fdd07"
   },
   "schema_version": "shield.v4.8g.real_backend_fixture.v1",
   "trusted_key_registry": {
