@@ -42,7 +42,26 @@ def component_verdicts() -> list[dict[str, object]]:
 
 
 def component_signature_results() -> list[dict[str, object]]:
-    return [{"component_id": component, "verified": True} for component in reversed(SUPPORTED_COMPONENTS)]
+    return [
+        {
+            "component_id": component,
+            "component_role": {
+                "adn": "shield_component_adn",
+                "dqsn": "shield_component_dqsn",
+                "guardian_wallet": "shield_component_guardian_wallet",
+                "qwg": "shield_component_qwg",
+                "sentinel_ai": "shield_component_sentinel_ai",
+            }[component],
+            "verified": True,
+            "verified_algorithms": ["classical-ed25519", "ml-dsa"],
+            "verified_standard_profiles": [
+                default_standard_profile_for_algorithm("classical-ed25519"),
+                default_standard_profile_for_algorithm("ml-dsa"),
+            ],
+            "signature_policy": "policy.v1",
+        }
+        for component in reversed(SUPPORTED_COMPONENTS)
+    ]
 
 
 def signature_for(algorithm: str, payload_hash: str) -> dict[str, object]:
