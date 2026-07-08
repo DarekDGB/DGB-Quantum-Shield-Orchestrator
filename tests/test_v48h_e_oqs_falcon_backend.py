@@ -284,7 +284,9 @@ def test_v48h_e_oqs_falcon_backend_rejects_truthy_non_bool_verify() -> None:
 class LengthCheckedOqsSignature(FakeOqsSignature):
     details = {
         "length_public_key": len(PUBLIC_KEY_BYTES),
-        "length_signature": hashlib.sha256(b"").digest_size,
+        # liboqs Falcon-1024 reports a maximum signature buffer length.
+        # Actual Falcon signatures are variable-length and may be shorter.
+        "length_signature": hashlib.sha256(b"").digest_size + 8,
     }
 
 
@@ -312,12 +314,22 @@ def test_v48h_e_oqs_falcon_backend_rejects_wrong_binary_lengths_before_native_ve
             signature=encode_binary_signature_material(b"0" * hashlib.sha256(b"").digest_size, field="signature"),
         )
 
+    assert backend.verify_signature(
+        algorithm="fn-dsa",
+        public_key=public_key_value(),
+        message=b"message",
+        signature=encode_binary_signature_material(b"short-signature", field="signature"),
+    ) is False
+
     with pytest.raises(BackendError, match="signature byte length"):
         backend.verify_signature(
             algorithm="fn-dsa",
             public_key=public_key_value(),
             message=b"message",
-            signature=encode_binary_signature_material(b"short-signature", field="signature"),
+            signature=encode_binary_signature_material(
+                b"0" * (hashlib.sha256(b"").digest_size + 9),
+                field="signature",
+            ),
         )
 
 
