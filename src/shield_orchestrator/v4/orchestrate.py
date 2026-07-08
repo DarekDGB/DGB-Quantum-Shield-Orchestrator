@@ -80,6 +80,7 @@ def build_test_only_signed_v4_receipt(
     not_before: str,
     not_after: str,
     adamantineos_handoff: dict[str, Any],
+    include_optional_fn_dsa: bool = False,
 ) -> dict[str, Any]:
     loaded_registry = load_key_registry(registry) if isinstance(registry, dict) else registry
     verified_components, component_signature_results = verify_component_verdicts(
@@ -106,15 +107,15 @@ def build_test_only_signed_v4_receipt(
         unsigned_payload=unsigned_payload,
         signature_bundle=build_signature_bundle(policy_version="policy.v1", signatures=[]),
     )
+    algorithms = ["classical-ed25519", "ml-dsa"]
+    if include_optional_fn_dsa:
+        algorithms.append("fn-dsa")
     signatures = [
         build_test_only_orchestrator_signature_entry(
-            algorithm="classical-ed25519",
+            algorithm=algorithm,
             signed_hash=shell["signed_payload_hash"],
-        ),
-        build_test_only_orchestrator_signature_entry(
-            algorithm="ml-dsa",
-            signed_hash=shell["signed_payload_hash"],
-        ),
+        )
+        for algorithm in algorithms
     ]
     receipt = build_signed_receipt_envelope(
         unsigned_payload=unsigned_payload,
