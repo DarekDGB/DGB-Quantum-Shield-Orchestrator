@@ -313,3 +313,15 @@ The main risk is accidentally creating signed authority where only signed eviden
 Shield v4 must prove decision evidence and still fail closed.
 
 AdamantineOS remains the final boundary.
+
+## V4.8H-E live-Falcon and profile-summary threats
+
+V4.8H-E adds the optional live Falcon-1024 backend path for FN-DSA draft-profile evidence and closes profile-summary drift as an explicit integration threat.
+
+The Orchestrator must deny:
+
+- FN-DSA signed with a profile other than `fips206-draft-falcon1024-v1`;
+- component summaries that list `fn-dsa` without the matching FN-DSA profile;
+- summaries that claim a profile not independently verified from the component bundle;
+- live backend disabled-mechanism or native liboqs exceptions;
+- any attempt to treat Falcon/FN-DSA as required ML-DSA, final FIPS 206 proof, transaction-signing authority, broadcast authority, or DigiByte consensus authority.
