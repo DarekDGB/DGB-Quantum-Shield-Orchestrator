@@ -1,0 +1,892 @@
+{
+  "author_attribution": "DarekDGB",
+  "expected_context_hash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+  "expected_request_id": "req-v4h-e-fn-dsa-final",
+  "receipt": {
+    "adamantineos_handoff": {
+      "handoff_allowed": true,
+      "handoff_reason": "ORCH_OK_ALL_COMPONENTS_ALLOW"
+    },
+    "canonicalization_profile": "shield-v4-canon.v1",
+    "component_signature_results": [
+      {
+        "component_id": "adn",
+        "component_role": "shield_component_adn",
+        "signature_policy": "policy.v1",
+        "verified": true,
+        "verified_algorithms": [
+          "classical-ed25519",
+          "ml-dsa",
+          "fn-dsa"
+        ],
+        "verified_standard_profiles": [
+          "rfc8032-ed25519-v1",
+          "fips204-ml-dsa-65-v1",
+          "fips206-draft-falcon1024-v1"
+        ]
+      },
+      {
+        "component_id": "dqsn",
+        "component_role": "shield_component_dqsn",
+        "signature_policy": "policy.v1",
+        "verified": true,
+        "verified_algorithms": [
+          "classical-ed25519",
+          "ml-dsa",
+          "fn-dsa"
+        ],
+        "verified_standard_profiles": [
+          "rfc8032-ed25519-v1",
+          "fips204-ml-dsa-65-v1",
+          "fips206-draft-falcon1024-v1"
+        ]
+      },
+      {
+        "component_id": "guardian_wallet",
+        "component_role": "shield_component_guardian_wallet",
+        "signature_policy": "policy.v1",
+        "verified": true,
+        "verified_algorithms": [
+          "classical-ed25519",
+          "ml-dsa",
+          "fn-dsa"
+        ],
+        "verified_standard_profiles": [
+          "rfc8032-ed25519-v1",
+          "fips204-ml-dsa-65-v1",
+          "fips206-draft-falcon1024-v1"
+        ]
+      },
+      {
+        "component_id": "qwg",
+        "component_role": "shield_component_qwg",
+        "signature_policy": "policy.v1",
+        "verified": true,
+        "verified_algorithms": [
+          "classical-ed25519",
+          "ml-dsa",
+          "fn-dsa"
+        ],
+        "verified_standard_profiles": [
+          "rfc8032-ed25519-v1",
+          "fips204-ml-dsa-65-v1",
+          "fips206-draft-falcon1024-v1"
+        ]
+      },
+      {
+        "component_id": "sentinel_ai",
+        "component_role": "shield_component_sentinel_ai",
+        "signature_policy": "policy.v1",
+        "verified": true,
+        "verified_algorithms": [
+          "classical-ed25519",
+          "ml-dsa",
+          "fn-dsa"
+        ],
+        "verified_standard_profiles": [
+          "rfc8032-ed25519-v1",
+          "fips204-ml-dsa-65-v1",
+          "fips206-draft-falcon1024-v1"
+        ]
+      }
+    ],
+    "component_verdicts": [
+      {
+        "canonicalization_profile": "shield-v4-canon.v1",
+        "component_id": "adn",
+        "context_hash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "contract_version": 4,
+        "decision": "ALLOW",
+        "evidence_families": [
+          "defense_signal"
+        ],
+        "evidence_hash": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+        "fail_closed": true,
+        "freshness_nonce": "nonce-adn",
+        "key_registry_version": 1,
+        "metadata": {
+          "integration_harness": "shield-v4.8h-final",
+          "source": "adn"
+        },
+        "not_after": "2026-06-21T00:05:00Z",
+        "not_before": "2026-06-21T00:00:00Z",
+        "reason_ids": [
+          "ADN_OK_COORDINATION_ALLOW"
+        ],
+        "request_id": "req-v4h-e-fn-dsa-final",
+        "schema_version": "shield.verdict.v2",
+        "signature_bundle": {
+          "policy_version": "policy.v1",
+          "schema_version": "shield.signature_bundle.v1",
+          "signatures": [
+            {
+              "algorithm": "classical-ed25519",
+              "domain_tag": "DGB-SHIELD-V4-COMPONENT-VERDICT:shield.verdict.v2:policy.v1",
+              "key_id": "test-shield_component_adn-classical-ed25519-v1",
+              "key_version": 1,
+              "signature": "2d3a8f16809fb5e1de8acff948be28d37f66422725e275b7d4276d0cd73241c3",
+              "signed_payload_hash": "156df5f6d3936a4344ec10ba50c6f02eb9c0e42d657a41b743d4d7fcba13761f",
+              "standard_profile": "rfc8032-ed25519-v1"
+            },
+            {
+              "algorithm": "ml-dsa",
+              "domain_tag": "DGB-SHIELD-V4-COMPONENT-VERDICT:shield.verdict.v2:policy.v1",
+              "key_id": "test-shield_component_adn-ml-dsa-v1",
+              "key_version": 1,
+              "signature": "044c24c508a01fab7bb66d54df33040c9bab8767a76971b12454f43d80ff7ca6",
+              "signed_payload_hash": "156df5f6d3936a4344ec10ba50c6f02eb9c0e42d657a41b743d4d7fcba13761f",
+              "standard_profile": "fips204-ml-dsa-65-v1"
+            },
+            {
+              "algorithm": "fn-dsa",
+              "domain_tag": "DGB-SHIELD-V4-COMPONENT-VERDICT:shield.verdict.v2:policy.v1",
+              "key_id": "test-shield_component_adn-fn-dsa-v1",
+              "key_version": 1,
+              "signature": "46530d1cabb578185b8cbcd4bd72490307fb11037b23cf9d82c03618cb6f0393",
+              "signed_payload_hash": "156df5f6d3936a4344ec10ba50c6f02eb9c0e42d657a41b743d4d7fcba13761f",
+              "standard_profile": "fips206-draft-falcon1024-v1"
+            }
+          ]
+        },
+        "signature_policy": "policy.v1",
+        "signed_payload_hash": "156df5f6d3936a4344ec10ba50c6f02eb9c0e42d657a41b743d4d7fcba13761f",
+        "verification_summary": {
+          "optional_algorithms": [
+            "fn-dsa"
+          ],
+          "policy_version": "policy.v1",
+          "required_algorithms": [
+            "classical-ed25519",
+            "ml-dsa"
+          ],
+          "results": [
+            {
+              "algorithm": "classical-ed25519",
+              "key_id": "test-shield_component_adn-classical-ed25519-v1",
+              "key_version": 1,
+              "standard_profile": "rfc8032-ed25519-v1",
+              "verified": true
+            },
+            {
+              "algorithm": "ml-dsa",
+              "key_id": "test-shield_component_adn-ml-dsa-v1",
+              "key_version": 1,
+              "standard_profile": "fips204-ml-dsa-65-v1",
+              "verified": true
+            },
+            {
+              "algorithm": "fn-dsa",
+              "key_id": "test-shield_component_adn-fn-dsa-v1",
+              "key_version": 1,
+              "standard_profile": "fips206-draft-falcon1024-v1",
+              "verified": true
+            }
+          ],
+          "verified_algorithms": [
+            "classical-ed25519",
+            "ml-dsa",
+            "fn-dsa"
+          ],
+          "verified_standard_profiles": [
+            "rfc8032-ed25519-v1",
+            "fips204-ml-dsa-65-v1",
+            "fips206-draft-falcon1024-v1"
+          ]
+        }
+      },
+      {
+        "canonicalization_profile": "shield-v4-canon.v1",
+        "component_id": "dqsn",
+        "context_hash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "contract_version": 4,
+        "decision": "ALLOW",
+        "evidence_families": [
+          "network_observation"
+        ],
+        "evidence_hash": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+        "fail_closed": true,
+        "freshness_nonce": "nonce-dqsn",
+        "key_registry_version": 1,
+        "metadata": {
+          "integration_harness": "shield-v4.8h-final",
+          "source": "dqsn"
+        },
+        "not_after": "2026-06-21T00:05:00Z",
+        "not_before": "2026-06-21T00:00:00Z",
+        "reason_ids": [
+          "DQSN_OK_NETWORK_ALLOW"
+        ],
+        "request_id": "req-v4h-e-fn-dsa-final",
+        "schema_version": "shield.verdict.v2",
+        "signature_bundle": {
+          "policy_version": "policy.v1",
+          "schema_version": "shield.signature_bundle.v1",
+          "signatures": [
+            {
+              "algorithm": "classical-ed25519",
+              "domain_tag": "DGB-SHIELD-V4-COMPONENT-VERDICT:shield.verdict.v2:policy.v1",
+              "key_id": "test-shield_component_dqsn-classical-ed25519-v1",
+              "key_version": 1,
+              "signature": "67278c8f1518cfc9edcaf35985e91b7e31afee5fe50c7463d187d2944d3ed1b0",
+              "signed_payload_hash": "b1048ce076acad36842fdccff9b8ac16e098462d01591ce204a070efaf005fd2",
+              "standard_profile": "rfc8032-ed25519-v1"
+            },
+            {
+              "algorithm": "ml-dsa",
+              "domain_tag": "DGB-SHIELD-V4-COMPONENT-VERDICT:shield.verdict.v2:policy.v1",
+              "key_id": "test-shield_component_dqsn-ml-dsa-v1",
+              "key_version": 1,
+              "signature": "e266eda93ce638e46f6545e560d129aea4672d2539fad8ceab267ed58e784936",
+              "signed_payload_hash": "b1048ce076acad36842fdccff9b8ac16e098462d01591ce204a070efaf005fd2",
+              "standard_profile": "fips204-ml-dsa-65-v1"
+            },
+            {
+              "algorithm": "fn-dsa",
+              "domain_tag": "DGB-SHIELD-V4-COMPONENT-VERDICT:shield.verdict.v2:policy.v1",
+              "key_id": "test-shield_component_dqsn-fn-dsa-v1",
+              "key_version": 1,
+              "signature": "0f45f2513df56402b99f933485afd888d81ca24d6206f5fb301a445628a3b752",
+              "signed_payload_hash": "b1048ce076acad36842fdccff9b8ac16e098462d01591ce204a070efaf005fd2",
+              "standard_profile": "fips206-draft-falcon1024-v1"
+            }
+          ]
+        },
+        "signature_policy": "policy.v1",
+        "signed_payload_hash": "b1048ce076acad36842fdccff9b8ac16e098462d01591ce204a070efaf005fd2",
+        "verification_summary": {
+          "optional_algorithms": [
+            "fn-dsa"
+          ],
+          "policy_version": "policy.v1",
+          "required_algorithms": [
+            "classical-ed25519",
+            "ml-dsa"
+          ],
+          "results": [
+            {
+              "algorithm": "classical-ed25519",
+              "key_id": "test-shield_component_dqsn-classical-ed25519-v1",
+              "key_version": 1,
+              "standard_profile": "rfc8032-ed25519-v1",
+              "verified": true
+            },
+            {
+              "algorithm": "ml-dsa",
+              "key_id": "test-shield_component_dqsn-ml-dsa-v1",
+              "key_version": 1,
+              "standard_profile": "fips204-ml-dsa-65-v1",
+              "verified": true
+            },
+            {
+              "algorithm": "fn-dsa",
+              "key_id": "test-shield_component_dqsn-fn-dsa-v1",
+              "key_version": 1,
+              "standard_profile": "fips206-draft-falcon1024-v1",
+              "verified": true
+            }
+          ],
+          "verified_algorithms": [
+            "classical-ed25519",
+            "ml-dsa",
+            "fn-dsa"
+          ],
+          "verified_standard_profiles": [
+            "rfc8032-ed25519-v1",
+            "fips204-ml-dsa-65-v1",
+            "fips206-draft-falcon1024-v1"
+          ]
+        }
+      },
+      {
+        "canonicalization_profile": "shield-v4-canon.v1",
+        "component_id": "guardian_wallet",
+        "context_hash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "contract_version": 4,
+        "decision": "ALLOW",
+        "evidence_families": [
+          "wallet_context"
+        ],
+        "evidence_hash": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+        "fail_closed": true,
+        "freshness_nonce": "nonce-guardian_wallet",
+        "key_registry_version": 1,
+        "metadata": {
+          "integration_harness": "shield-v4.8h-final",
+          "source": "guardian_wallet"
+        },
+        "not_after": "2026-06-21T00:05:00Z",
+        "not_before": "2026-06-21T00:00:00Z",
+        "reason_ids": [
+          "GW_OK_HEALTHY_ALLOW"
+        ],
+        "request_id": "req-v4h-e-fn-dsa-final",
+        "schema_version": "shield.verdict.v2",
+        "signature_bundle": {
+          "policy_version": "policy.v1",
+          "schema_version": "shield.signature_bundle.v1",
+          "signatures": [
+            {
+              "algorithm": "classical-ed25519",
+              "domain_tag": "DGB-SHIELD-V4-COMPONENT-VERDICT:shield.verdict.v2:policy.v1",
+              "key_id": "test-shield_component_guardian_wallet-classical-ed25519-v1",
+              "key_version": 1,
+              "signature": "42f4284a5e53adbaf04c6339a962ef7e0bbc7e76041a427115ef9cfbcb078bb3",
+              "signed_payload_hash": "e89fc84db71f9753cb82c76870f33dce4b1efce84c69ca99657add873a5ab26d",
+              "standard_profile": "rfc8032-ed25519-v1"
+            },
+            {
+              "algorithm": "ml-dsa",
+              "domain_tag": "DGB-SHIELD-V4-COMPONENT-VERDICT:shield.verdict.v2:policy.v1",
+              "key_id": "test-shield_component_guardian_wallet-ml-dsa-v1",
+              "key_version": 1,
+              "signature": "55a01e3018d843f9cc87867400788e49de0a8c90a7b2bf4b939d7d93677dbc20",
+              "signed_payload_hash": "e89fc84db71f9753cb82c76870f33dce4b1efce84c69ca99657add873a5ab26d",
+              "standard_profile": "fips204-ml-dsa-65-v1"
+            },
+            {
+              "algorithm": "fn-dsa",
+              "domain_tag": "DGB-SHIELD-V4-COMPONENT-VERDICT:shield.verdict.v2:policy.v1",
+              "key_id": "test-shield_component_guardian_wallet-fn-dsa-v1",
+              "key_version": 1,
+              "signature": "6af22d6241d44aebd5addfcf1d6606e30db25cfe3f95719d8c5504ce992c68c9",
+              "signed_payload_hash": "e89fc84db71f9753cb82c76870f33dce4b1efce84c69ca99657add873a5ab26d",
+              "standard_profile": "fips206-draft-falcon1024-v1"
+            }
+          ]
+        },
+        "signature_policy": "policy.v1",
+        "signed_payload_hash": "e89fc84db71f9753cb82c76870f33dce4b1efce84c69ca99657add873a5ab26d",
+        "verification_summary": {
+          "optional_algorithms": [
+            "fn-dsa"
+          ],
+          "policy_version": "policy.v1",
+          "required_algorithms": [
+            "classical-ed25519",
+            "ml-dsa"
+          ],
+          "results": [
+            {
+              "algorithm": "classical-ed25519",
+              "key_id": "test-shield_component_guardian_wallet-classical-ed25519-v1",
+              "key_version": 1,
+              "standard_profile": "rfc8032-ed25519-v1",
+              "verified": true
+            },
+            {
+              "algorithm": "ml-dsa",
+              "key_id": "test-shield_component_guardian_wallet-ml-dsa-v1",
+              "key_version": 1,
+              "standard_profile": "fips204-ml-dsa-65-v1",
+              "verified": true
+            },
+            {
+              "algorithm": "fn-dsa",
+              "key_id": "test-shield_component_guardian_wallet-fn-dsa-v1",
+              "key_version": 1,
+              "standard_profile": "fips206-draft-falcon1024-v1",
+              "verified": true
+            }
+          ],
+          "verified_algorithms": [
+            "classical-ed25519",
+            "ml-dsa",
+            "fn-dsa"
+          ],
+          "verified_standard_profiles": [
+            "rfc8032-ed25519-v1",
+            "fips204-ml-dsa-65-v1",
+            "fips206-draft-falcon1024-v1"
+          ]
+        }
+      },
+      {
+        "canonicalization_profile": "shield-v4-canon.v1",
+        "component_id": "qwg",
+        "context_hash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "contract_version": 4,
+        "decision": "ALLOW",
+        "evidence_families": [
+          "wallet_posture"
+        ],
+        "evidence_hash": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+        "fail_closed": true,
+        "freshness_nonce": "nonce-qwg",
+        "key_registry_version": 1,
+        "metadata": {
+          "integration_harness": "shield-v4.8h-final",
+          "source": "qwg"
+        },
+        "not_after": "2026-06-21T00:05:00Z",
+        "not_before": "2026-06-21T00:00:00Z",
+        "reason_ids": [
+          "QWG_OK_POSTURE_ALLOW"
+        ],
+        "request_id": "req-v4h-e-fn-dsa-final",
+        "schema_version": "shield.verdict.v2",
+        "signature_bundle": {
+          "policy_version": "policy.v1",
+          "schema_version": "shield.signature_bundle.v1",
+          "signatures": [
+            {
+              "algorithm": "classical-ed25519",
+              "domain_tag": "DGB-SHIELD-V4-COMPONENT-VERDICT:shield.verdict.v2:policy.v1",
+              "key_id": "test-shield_component_qwg-classical-ed25519-v1",
+              "key_version": 1,
+              "signature": "86d9c67efeead7e049ed5758dbbbf1e02023a7ef85f12306656e93c49185281c",
+              "signed_payload_hash": "9fbeedb013ddbc7ef91d7a401e7341554a8594de40f6bc38b27dd29844576967",
+              "standard_profile": "rfc8032-ed25519-v1"
+            },
+            {
+              "algorithm": "ml-dsa",
+              "domain_tag": "DGB-SHIELD-V4-COMPONENT-VERDICT:shield.verdict.v2:policy.v1",
+              "key_id": "test-shield_component_qwg-ml-dsa-v1",
+              "key_version": 1,
+              "signature": "d24ab6096f1dc926918058bba710121f3e5e637131aa3f588072527d005b6654",
+              "signed_payload_hash": "9fbeedb013ddbc7ef91d7a401e7341554a8594de40f6bc38b27dd29844576967",
+              "standard_profile": "fips204-ml-dsa-65-v1"
+            },
+            {
+              "algorithm": "fn-dsa",
+              "domain_tag": "DGB-SHIELD-V4-COMPONENT-VERDICT:shield.verdict.v2:policy.v1",
+              "key_id": "test-shield_component_qwg-fn-dsa-v1",
+              "key_version": 1,
+              "signature": "a6a98312f044148590085b5468c1e873d0ca03264acd08a393753fad3ecb0069",
+              "signed_payload_hash": "9fbeedb013ddbc7ef91d7a401e7341554a8594de40f6bc38b27dd29844576967",
+              "standard_profile": "fips206-draft-falcon1024-v1"
+            }
+          ]
+        },
+        "signature_policy": "policy.v1",
+        "signed_payload_hash": "9fbeedb013ddbc7ef91d7a401e7341554a8594de40f6bc38b27dd29844576967",
+        "verification_summary": {
+          "optional_algorithms": [
+            "fn-dsa"
+          ],
+          "policy_version": "policy.v1",
+          "required_algorithms": [
+            "classical-ed25519",
+            "ml-dsa"
+          ],
+          "results": [
+            {
+              "algorithm": "classical-ed25519",
+              "key_id": "test-shield_component_qwg-classical-ed25519-v1",
+              "key_version": 1,
+              "standard_profile": "rfc8032-ed25519-v1",
+              "verified": true
+            },
+            {
+              "algorithm": "ml-dsa",
+              "key_id": "test-shield_component_qwg-ml-dsa-v1",
+              "key_version": 1,
+              "standard_profile": "fips204-ml-dsa-65-v1",
+              "verified": true
+            },
+            {
+              "algorithm": "fn-dsa",
+              "key_id": "test-shield_component_qwg-fn-dsa-v1",
+              "key_version": 1,
+              "standard_profile": "fips206-draft-falcon1024-v1",
+              "verified": true
+            }
+          ],
+          "verified_algorithms": [
+            "classical-ed25519",
+            "ml-dsa",
+            "fn-dsa"
+          ],
+          "verified_standard_profiles": [
+            "rfc8032-ed25519-v1",
+            "fips204-ml-dsa-65-v1",
+            "fips206-draft-falcon1024-v1"
+          ]
+        }
+      },
+      {
+        "canonicalization_profile": "shield-v4-canon.v1",
+        "component_id": "sentinel_ai",
+        "context_hash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "contract_version": 4,
+        "decision": "ALLOW",
+        "evidence_families": [
+          "telemetry"
+        ],
+        "evidence_hash": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+        "fail_closed": true,
+        "freshness_nonce": "nonce-sentinel_ai",
+        "key_registry_version": 1,
+        "metadata": {
+          "integration_harness": "shield-v4.8h-final",
+          "source": "sentinel_ai"
+        },
+        "not_after": "2026-06-21T00:05:00Z",
+        "not_before": "2026-06-21T00:00:00Z",
+        "reason_ids": [
+          "SNTL_OK_TELEMETRY_ALLOW"
+        ],
+        "request_id": "req-v4h-e-fn-dsa-final",
+        "schema_version": "shield.verdict.v2",
+        "signature_bundle": {
+          "policy_version": "policy.v1",
+          "schema_version": "shield.signature_bundle.v1",
+          "signatures": [
+            {
+              "algorithm": "classical-ed25519",
+              "domain_tag": "DGB-SHIELD-V4-COMPONENT-VERDICT:shield.verdict.v2:policy.v1",
+              "key_id": "test-shield_component_sentinel_ai-classical-ed25519-v1",
+              "key_version": 1,
+              "signature": "5efec4e5789a6b144ce892a05970e07d9ab7d86fd39d2f472f2b4831d7a55a8f",
+              "signed_payload_hash": "057abd7c4e163da1f14c572e6601130059c393fe1c76e4341e835b317437e600",
+              "standard_profile": "rfc8032-ed25519-v1"
+            },
+            {
+              "algorithm": "ml-dsa",
+              "domain_tag": "DGB-SHIELD-V4-COMPONENT-VERDICT:shield.verdict.v2:policy.v1",
+              "key_id": "test-shield_component_sentinel_ai-ml-dsa-v1",
+              "key_version": 1,
+              "signature": "e54c596d23e2365bd5d2a932627d4675689904f0e1cd613a73cb1d5460bccb4a",
+              "signed_payload_hash": "057abd7c4e163da1f14c572e6601130059c393fe1c76e4341e835b317437e600",
+              "standard_profile": "fips204-ml-dsa-65-v1"
+            },
+            {
+              "algorithm": "fn-dsa",
+              "domain_tag": "DGB-SHIELD-V4-COMPONENT-VERDICT:shield.verdict.v2:policy.v1",
+              "key_id": "test-shield_component_sentinel_ai-fn-dsa-v1",
+              "key_version": 1,
+              "signature": "10abaac0188d821f993c90f0e73eeed16b2d7666270aa6f1b6ffcec1c7da72fd",
+              "signed_payload_hash": "057abd7c4e163da1f14c572e6601130059c393fe1c76e4341e835b317437e600",
+              "standard_profile": "fips206-draft-falcon1024-v1"
+            }
+          ]
+        },
+        "signature_policy": "policy.v1",
+        "signed_payload_hash": "057abd7c4e163da1f14c572e6601130059c393fe1c76e4341e835b317437e600",
+        "verification_summary": {
+          "optional_algorithms": [
+            "fn-dsa"
+          ],
+          "policy_version": "policy.v1",
+          "required_algorithms": [
+            "classical-ed25519",
+            "ml-dsa"
+          ],
+          "results": [
+            {
+              "algorithm": "classical-ed25519",
+              "key_id": "test-shield_component_sentinel_ai-classical-ed25519-v1",
+              "key_version": 1,
+              "standard_profile": "rfc8032-ed25519-v1",
+              "verified": true
+            },
+            {
+              "algorithm": "ml-dsa",
+              "key_id": "test-shield_component_sentinel_ai-ml-dsa-v1",
+              "key_version": 1,
+              "standard_profile": "fips204-ml-dsa-65-v1",
+              "verified": true
+            },
+            {
+              "algorithm": "fn-dsa",
+              "key_id": "test-shield_component_sentinel_ai-fn-dsa-v1",
+              "key_version": 1,
+              "standard_profile": "fips206-draft-falcon1024-v1",
+              "verified": true
+            }
+          ],
+          "verified_algorithms": [
+            "classical-ed25519",
+            "ml-dsa",
+            "fn-dsa"
+          ],
+          "verified_standard_profiles": [
+            "rfc8032-ed25519-v1",
+            "fips204-ml-dsa-65-v1",
+            "fips206-draft-falcon1024-v1"
+          ]
+        }
+      }
+    ],
+    "context_hash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+    "contract_version": 4,
+    "dominant_reason_ids": [
+      "ORCH_OK_ALL_COMPONENTS_ALLOW"
+    ],
+    "fail_closed": true,
+    "final_outcome": "ALLOW",
+    "freshness_nonce": "nonce-final-fn-dsa",
+    "key_registry_version": 1,
+    "not_after": "2026-06-21T00:05:00Z",
+    "not_before": "2026-06-21T00:00:00Z",
+    "receipt_hash": "50f753f9fd2aa825afa9abac0eaf519cb3d8eb2ae60880eb7143b37e18430b1a",
+    "request_id": "req-v4h-e-fn-dsa-final",
+    "schema_version": "shield.receipt.v2",
+    "signature_bundle": {
+      "policy_version": "policy.v1",
+      "schema_version": "shield.signature_bundle.v1",
+      "signatures": [
+        {
+          "algorithm": "classical-ed25519",
+          "domain_tag": "DGB-SHIELD-V4-ORCH-RECEIPT:shield.receipt.v2:policy.v1",
+          "key_id": "test-shield_orchestrator-classical-ed25519-v1",
+          "key_version": 1,
+          "signature": "c5a30c0997946cf52ac5c38b09e20d0c0c534cb59a5e813e28d8c5772679b4eb",
+          "signed_payload_hash": "ed704d8dfb0a02e443127e757d2ba5b22e7c4e1968a11bd1b40f868c5ac2457b",
+          "standard_profile": "rfc8032-ed25519-v1"
+        },
+        {
+          "algorithm": "ml-dsa",
+          "domain_tag": "DGB-SHIELD-V4-ORCH-RECEIPT:shield.receipt.v2:policy.v1",
+          "key_id": "test-shield_orchestrator-ml-dsa-v1",
+          "key_version": 1,
+          "signature": "ccc2ffdba38adf93bb56da4c72fec4a9e210a6aa8cd4a8ec0d239a25406383ab",
+          "signed_payload_hash": "ed704d8dfb0a02e443127e757d2ba5b22e7c4e1968a11bd1b40f868c5ac2457b",
+          "standard_profile": "fips204-ml-dsa-65-v1"
+        },
+        {
+          "algorithm": "fn-dsa",
+          "domain_tag": "DGB-SHIELD-V4-ORCH-RECEIPT:shield.receipt.v2:policy.v1",
+          "key_id": "test-shield_orchestrator-fn-dsa-v1",
+          "key_version": 1,
+          "signature": "b57e42b095778928fdff185dffee70f1b954faeefb8cc67443310ed25a9e9536",
+          "signed_payload_hash": "ed704d8dfb0a02e443127e757d2ba5b22e7c4e1968a11bd1b40f868c5ac2457b",
+          "standard_profile": "fips206-draft-falcon1024-v1"
+        }
+      ]
+    },
+    "signature_policy": "policy.v1",
+    "signed_payload_hash": "ed704d8dfb0a02e443127e757d2ba5b22e7c4e1968a11bd1b40f868c5ac2457b",
+    "verification_summary": {
+      "optional_algorithms": [
+        "fn-dsa"
+      ],
+      "policy_version": "policy.v1",
+      "required_algorithms": [
+        "classical-ed25519",
+        "ml-dsa"
+      ],
+      "results": [
+        {
+          "algorithm": "classical-ed25519",
+          "key_id": "test-shield_orchestrator-classical-ed25519-v1",
+          "key_version": 1,
+          "standard_profile": "rfc8032-ed25519-v1",
+          "verified": true
+        },
+        {
+          "algorithm": "ml-dsa",
+          "key_id": "test-shield_orchestrator-ml-dsa-v1",
+          "key_version": 1,
+          "standard_profile": "fips204-ml-dsa-65-v1",
+          "verified": true
+        },
+        {
+          "algorithm": "fn-dsa",
+          "key_id": "test-shield_orchestrator-fn-dsa-v1",
+          "key_version": 1,
+          "standard_profile": "fips206-draft-falcon1024-v1",
+          "verified": true
+        }
+      ],
+      "verified_algorithms": [
+        "classical-ed25519",
+        "ml-dsa",
+        "fn-dsa"
+      ],
+      "verified_standard_profiles": [
+        "rfc8032-ed25519-v1",
+        "fips204-ml-dsa-65-v1",
+        "fips206-draft-falcon1024-v1"
+      ]
+    }
+  },
+  "schema_version": "shield.v4.8h.full_hybrid_fixture.v1",
+  "trusted_key_registry": {
+    "entries": [
+      {
+        "algorithm": "classical-ed25519",
+        "key_id": "test-shield_component_adn-classical-ed25519-v1",
+        "key_version": 1,
+        "not_after": "2030-01-01T00:00:00Z",
+        "not_before": "2026-01-01T00:00:00Z",
+        "public_key": "TEST-ONLY-PUBLIC-shield_component_adn-classical-ed25519-v1",
+        "role": "shield_component_adn",
+        "status": "active"
+      },
+      {
+        "algorithm": "ml-dsa",
+        "key_id": "test-shield_component_adn-ml-dsa-v1",
+        "key_version": 1,
+        "not_after": "2030-01-01T00:00:00Z",
+        "not_before": "2026-01-01T00:00:00Z",
+        "public_key": "TEST-ONLY-PUBLIC-shield_component_adn-ml-dsa-v1",
+        "role": "shield_component_adn",
+        "status": "active"
+      },
+      {
+        "algorithm": "fn-dsa",
+        "key_id": "test-shield_component_adn-fn-dsa-v1",
+        "key_version": 1,
+        "not_after": "2030-01-01T00:00:00Z",
+        "not_before": "2026-01-01T00:00:00Z",
+        "public_key": "TEST-ONLY-PUBLIC-shield_component_adn-fn-dsa-v1",
+        "role": "shield_component_adn",
+        "status": "active"
+      },
+      {
+        "algorithm": "classical-ed25519",
+        "key_id": "test-shield_component_dqsn-classical-ed25519-v1",
+        "key_version": 1,
+        "not_after": "2030-01-01T00:00:00Z",
+        "not_before": "2026-01-01T00:00:00Z",
+        "public_key": "TEST-ONLY-PUBLIC-shield_component_dqsn-classical-ed25519-v1",
+        "role": "shield_component_dqsn",
+        "status": "active"
+      },
+      {
+        "algorithm": "ml-dsa",
+        "key_id": "test-shield_component_dqsn-ml-dsa-v1",
+        "key_version": 1,
+        "not_after": "2030-01-01T00:00:00Z",
+        "not_before": "2026-01-01T00:00:00Z",
+        "public_key": "TEST-ONLY-PUBLIC-shield_component_dqsn-ml-dsa-v1",
+        "role": "shield_component_dqsn",
+        "status": "active"
+      },
+      {
+        "algorithm": "fn-dsa",
+        "key_id": "test-shield_component_dqsn-fn-dsa-v1",
+        "key_version": 1,
+        "not_after": "2030-01-01T00:00:00Z",
+        "not_before": "2026-01-01T00:00:00Z",
+        "public_key": "TEST-ONLY-PUBLIC-shield_component_dqsn-fn-dsa-v1",
+        "role": "shield_component_dqsn",
+        "status": "active"
+      },
+      {
+        "algorithm": "classical-ed25519",
+        "key_id": "test-shield_component_guardian_wallet-classical-ed25519-v1",
+        "key_version": 1,
+        "not_after": "2030-01-01T00:00:00Z",
+        "not_before": "2026-01-01T00:00:00Z",
+        "public_key": "TEST-ONLY-PUBLIC-shield_component_guardian_wallet-classical-ed25519-v1",
+        "role": "shield_component_guardian_wallet",
+        "status": "active"
+      },
+      {
+        "algorithm": "ml-dsa",
+        "key_id": "test-shield_component_guardian_wallet-ml-dsa-v1",
+        "key_version": 1,
+        "not_after": "2030-01-01T00:00:00Z",
+        "not_before": "2026-01-01T00:00:00Z",
+        "public_key": "TEST-ONLY-PUBLIC-shield_component_guardian_wallet-ml-dsa-v1",
+        "role": "shield_component_guardian_wallet",
+        "status": "active"
+      },
+      {
+        "algorithm": "fn-dsa",
+        "key_id": "test-shield_component_guardian_wallet-fn-dsa-v1",
+        "key_version": 1,
+        "not_after": "2030-01-01T00:00:00Z",
+        "not_before": "2026-01-01T00:00:00Z",
+        "public_key": "TEST-ONLY-PUBLIC-shield_component_guardian_wallet-fn-dsa-v1",
+        "role": "shield_component_guardian_wallet",
+        "status": "active"
+      },
+      {
+        "algorithm": "classical-ed25519",
+        "key_id": "test-shield_component_qwg-classical-ed25519-v1",
+        "key_version": 1,
+        "not_after": "2030-01-01T00:00:00Z",
+        "not_before": "2026-01-01T00:00:00Z",
+        "public_key": "TEST-ONLY-PUBLIC-shield_component_qwg-classical-ed25519-v1",
+        "role": "shield_component_qwg",
+        "status": "active"
+      },
+      {
+        "algorithm": "ml-dsa",
+        "key_id": "test-shield_component_qwg-ml-dsa-v1",
+        "key_version": 1,
+        "not_after": "2030-01-01T00:00:00Z",
+        "not_before": "2026-01-01T00:00:00Z",
+        "public_key": "TEST-ONLY-PUBLIC-shield_component_qwg-ml-dsa-v1",
+        "role": "shield_component_qwg",
+        "status": "active"
+      },
+      {
+        "algorithm": "fn-dsa",
+        "key_id": "test-shield_component_qwg-fn-dsa-v1",
+        "key_version": 1,
+        "not_after": "2030-01-01T00:00:00Z",
+        "not_before": "2026-01-01T00:00:00Z",
+        "public_key": "TEST-ONLY-PUBLIC-shield_component_qwg-fn-dsa-v1",
+        "role": "shield_component_qwg",
+        "status": "active"
+      },
+      {
+        "algorithm": "classical-ed25519",
+        "key_id": "test-shield_component_sentinel_ai-classical-ed25519-v1",
+        "key_version": 1,
+        "not_after": "2030-01-01T00:00:00Z",
+        "not_before": "2026-01-01T00:00:00Z",
+        "public_key": "TEST-ONLY-PUBLIC-shield_component_sentinel_ai-classical-ed25519-v1",
+        "role": "shield_component_sentinel_ai",
+        "status": "active"
+      },
+      {
+        "algorithm": "ml-dsa",
+        "key_id": "test-shield_component_sentinel_ai-ml-dsa-v1",
+        "key_version": 1,
+        "not_after": "2030-01-01T00:00:00Z",
+        "not_before": "2026-01-01T00:00:00Z",
+        "public_key": "TEST-ONLY-PUBLIC-shield_component_sentinel_ai-ml-dsa-v1",
+        "role": "shield_component_sentinel_ai",
+        "status": "active"
+      },
+      {
+        "algorithm": "fn-dsa",
+        "key_id": "test-shield_component_sentinel_ai-fn-dsa-v1",
+        "key_version": 1,
+        "not_after": "2030-01-01T00:00:00Z",
+        "not_before": "2026-01-01T00:00:00Z",
+        "public_key": "TEST-ONLY-PUBLIC-shield_component_sentinel_ai-fn-dsa-v1",
+        "role": "shield_component_sentinel_ai",
+        "status": "active"
+      },
+      {
+        "algorithm": "classical-ed25519",
+        "key_id": "test-shield_orchestrator-classical-ed25519-v1",
+        "key_version": 1,
+        "not_after": "2030-01-01T00:00:00Z",
+        "not_before": "2026-01-01T00:00:00Z",
+        "public_key": "TEST-ONLY-PUBLIC-shield_orchestrator-classical-ed25519-v1",
+        "role": "shield_orchestrator",
+        "status": "active"
+      },
+      {
+        "algorithm": "ml-dsa",
+        "key_id": "test-shield_orchestrator-ml-dsa-v1",
+        "key_version": 1,
+        "not_after": "2030-01-01T00:00:00Z",
+        "not_before": "2026-01-01T00:00:00Z",
+        "public_key": "TEST-ONLY-PUBLIC-shield_orchestrator-ml-dsa-v1",
+        "role": "shield_orchestrator",
+        "status": "active"
+      },
+      {
+        "algorithm": "fn-dsa",
+        "key_id": "test-shield_orchestrator-fn-dsa-v1",
+        "key_version": 1,
+        "not_after": "2030-01-01T00:00:00Z",
+        "not_before": "2026-01-01T00:00:00Z",
+        "public_key": "TEST-ONLY-PUBLIC-shield_orchestrator-fn-dsa-v1",
+        "role": "shield_orchestrator",
+        "status": "active"
+      }
+    ],
+    "registry_version": 1,
+    "schema_version": "shield.key_registry.v1"
+  },
+  "verification_time": "2026-06-21T00:02:00Z",
+  "warning": "TEST-ONLY Shield v4.8H final hybrid fixture. FN-DSA is Falcon-1024 draft-profile optional evidence only."
+}
