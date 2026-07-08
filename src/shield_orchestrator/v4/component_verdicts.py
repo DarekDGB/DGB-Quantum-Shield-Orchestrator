@@ -269,6 +269,7 @@ def verify_component_verdicts(
                 "component_role": component_role_for(component_id),
                 "verified": True,
                 "verified_algorithms": list(checked["verification_summary"]["verified_algorithms"]),
+                "verified_standard_profiles": list(checked["verification_summary"]["verified_standard_profiles"]),
                 "signature_policy": checked["verification_summary"]["policy_version"],
             }
         )
