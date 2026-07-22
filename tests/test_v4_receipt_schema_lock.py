@@ -64,6 +64,15 @@ def component_signature_results() -> list[dict[str, object]]:
     ]
 
 
+def component_signature_results_with_algorithms(algorithms: list[str]) -> list[dict[str, object]]:
+    results = component_signature_results()
+    results[0]["verified_algorithms"] = algorithms
+    results[0]["verified_standard_profiles"] = [
+        default_standard_profile_for_algorithm(algorithm) for algorithm in algorithms
+    ]
+    return results
+
+
 def signature_for(algorithm: str, payload_hash: str) -> dict[str, object]:
     key_id = f"test-shield_orchestrator-{algorithm}-v1"
     key_version = 1
@@ -159,6 +168,96 @@ def test_v4_receipt_builder_rejects_malformed_inputs():
         mutate(candidate)
         with pytest.raises(ValueError):
             build_unsigned_receipt_payload(**candidate)
+
+
+@pytest.mark.parametrize(
+    "algorithms",
+    [
+        ["fn-dsa"],
+        ["classical-ed25519", "fn-dsa"],
+        ["ml-dsa", "fn-dsa"],
+    ],
+)
+def test_v4_receipt_builder_rejects_optional_rescue_for_missing_required_algorithm(
+    algorithms: list[str],
+):
+    with pytest.raises(ValueError, match="component signature result missing required algorithms"):
+        build_unsigned_receipt_payload(
+            request_id="req-v4-no-rescue",
+            context_hash=CTX,
+            freshness_nonce="nonce-v4-no-rescue",
+            not_before="2026-06-21T00:00:00Z",
+            not_after="2026-06-21T00:05:00Z",
+            component_verdicts=component_verdicts(),
+            component_signature_results=component_signature_results_with_algorithms(algorithms),
+            final_outcome="ALLOW",
+            dominant_reason_ids=["ORCH_OK_ALL_COMPONENTS_ALLOW"],
+            key_registry_version=1,
+            adamantineos_handoff={"handoff_allowed": True},
+        )
+
+
+@pytest.mark.parametrize(
+    "algorithms",
+    [
+        ["classical-ed25519", "ml-dsa"],
+        ["classical-ed25519", "ml-dsa", "fn-dsa"],
+    ],
+)
+def test_v4_receipt_builder_accepts_required_and_optional_component_summaries(
+    algorithms: list[str],
+):
+    payload = build_unsigned_receipt_payload(
+        request_id="req-v4-no-rescue-valid",
+        context_hash=CTX,
+        freshness_nonce="nonce-v4-no-rescue-valid",
+        not_before="2026-06-21T00:00:00Z",
+        not_after="2026-06-21T00:05:00Z",
+        component_verdicts=component_verdicts(),
+        component_signature_results=component_signature_results_with_algorithms(algorithms),
+        final_outcome="ALLOW",
+        dominant_reason_ids=["ORCH_OK_ALL_COMPONENTS_ALLOW"],
+        key_registry_version=1,
+        adamantineos_handoff={"handoff_allowed": True},
+    )
+
+    assert payload["component_signature_results"][-1]["verified_algorithms"] == algorithms
+
+
+def test_v4_receipt_validator_rejects_signed_optional_rescue_before_crypto_verification():
+    invalid_payload = unsigned_payload()
+    invalid_payload["component_signature_results"] = component_signature_results_with_algorithms(
+        ["classical-ed25519", "fn-dsa"]
+    )
+    shell = build_signed_receipt_envelope(
+        unsigned_payload=invalid_payload,
+        signature_bundle=build_signature_bundle(policy_version="policy.v1", signatures=[]),
+    )
+    signatures = [
+        signature_for("classical-ed25519", shell["signed_payload_hash"]),
+        signature_for("ml-dsa", shell["signed_payload_hash"]),
+    ]
+    receipt = build_signed_receipt_envelope(
+        unsigned_payload=invalid_payload,
+        signature_bundle=build_signature_bundle(policy_version="policy.v1", signatures=signatures),
+    )
+    verifier_calls = 0
+
+    def tracking_verifier(entry, key):
+        nonlocal verifier_calls
+        verifier_calls += 1
+        return _test_verifier(entry, key)
+
+    with pytest.raises(ValueError, match="component signature result missing required algorithms"):
+        validate_receipt_envelope(
+            receipt,
+            expected_context_hash=CTX,
+            registry=build_test_registry(),
+            verification_time="2026-06-21T00:01:00Z",
+            verifier=tracking_verifier,
+        )
+
+    assert verifier_calls == 0
 
 
 def test_v4_receipt_envelope_rejects_schema_tampering():
