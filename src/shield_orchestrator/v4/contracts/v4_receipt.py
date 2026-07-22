@@ -176,7 +176,7 @@ def _validate_component_signature_results_for_receipt(results: Any) -> list[dict
             raise ValueError("component signature result algorithms must be non-empty strings")
         if len(set(algorithms)) != len(algorithms):
             raise ValueError("component signature result duplicate algorithm")
-        if set(algorithms) < {"classical-ed25519", "ml-dsa"}:
+        if not set(SIGNATURE_POLICY_V1.required_algorithms).issubset(algorithms):
             raise ValueError("component signature result missing required algorithms")
         if any(algorithm not in ALGORITHM_STANDARD_PROFILES for algorithm in algorithms):
             raise ValueError("component signature result contains unsupported algorithm")
