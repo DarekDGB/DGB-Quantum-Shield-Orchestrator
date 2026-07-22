@@ -4,11 +4,13 @@ Author attribution: DarekDGB
 
 ## Status
 
-This document is a pre-implementation threat model for Shield v4 PQC work.
+This document locks the threat model for the implemented Shield v4 PQC
+contract surface.
 
 Baseline tag: `ecosystem-pre-v4-audit-lock`
 
-This is not a Shield v4 release and does not add cryptographic code.
+Shield v4 remains controlled pre-release work. Cryptographic evidence does not
+grant execution authority.
 
 ## Security Goal
 
@@ -95,6 +97,7 @@ Assume an attacker may attempt to:
 - present FN-DSA evidence as if it satisfies ML-DSA
 - flip an FN-DSA `standard_profile` after signing
 - reinterpret a draft Falcon-1024 profile as another Falcon/FN-DSA profile
+- reorder required signatures or place optional FN-DSA before a required path
 - duplicate algorithm entries in a signature bundle
 - include unknown algorithms
 - trigger canonicalization ambiguity
@@ -200,13 +203,20 @@ Controls:
 - required classical and ML-DSA paths must both verify for `policy.v1`.
 - FN-DSA evidence is optional and cannot override required-path failure.
 
-### Signature Bundle Splicing
+### Signature Bundle Reordering and Splicing
 
-Threat: valid signatures from different receipts are mixed into one bundle.
+Threat: valid signatures are reordered, or signatures from different receipts
+are mixed into one bundle, to create a different accepted representation.
 
 Controls:
 
 - every signature signs the same domain-separated `signed_payload_hash`.
+- canonical order is derived from the active policy's `allowed_algorithms`.
+- `policy.v1` requires `classical-ed25519`, then `ml-dsa`, with optional
+  `fn-dsa` last.
+- builders emit canonical order; verifiers reject reordered arrays before
+  per-signature key selection, role/status/window checks, or cryptographic
+  verification.
 - duplicate algorithms fail closed.
 - unknown algorithms fail closed.
 - key id, key version, algorithm, role, policy, profile, and payload hash are checked together.
@@ -255,6 +265,7 @@ Controls:
 
 - reject malformed input before cryptographic verification.
 - validate schema, field count, canonical shape, hashes, key status, and policy before signature work.
+- reject noncanonical signature-bundle order before signature work.
 - bound signature count and bundle size.
 - define per-request verification work budget before release.
 
@@ -280,6 +291,8 @@ Minimum negative tests:
 - unknown algorithm -> DENY
 - unsupported algorithm -> DENY
 - signature algorithm downgrade -> DENY
+- reversed required signature order -> DENY
+- FN-DSA before or between required signatures -> DENY
 - v3 receipt submitted where v4 is required -> DENY
 - signed payload changed after signing -> DENY
 - receipt hash changed after signing -> DENY
