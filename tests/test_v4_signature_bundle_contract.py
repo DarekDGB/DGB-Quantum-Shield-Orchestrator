@@ -50,10 +50,17 @@ def good_bundle(extra: bool = False) -> dict[str, object]:
     return build_signature_bundle(policy_version="policy.v1", signatures=signatures)
 
 
-def test_v4_signature_bundle_verifies_required_and_optional_paths():
+@pytest.mark.parametrize(
+    ("extra", "expected_algorithms"),
+    [
+        (False, ["classical-ed25519", "ml-dsa"]),
+        (True, ["classical-ed25519", "ml-dsa", "fn-dsa"]),
+    ],
+)
+def test_v4_signature_bundle_verifies_required_and_optional_paths(extra, expected_algorithms):
     registry = load_key_registry(build_test_registry())
     summary = verify_signature_bundle(
-        good_bundle(extra=True),
+        good_bundle(extra=extra),
         expected_signed_payload_hash=PAYLOAD_HASH,
         expected_domain_tag=ORCHESTRATOR_RECEIPT_DOMAIN,
         required_role="shield_orchestrator",
@@ -65,7 +72,84 @@ def test_v4_signature_bundle_verifies_required_and_optional_paths():
     )
     assert summary["required_algorithms"] == ["classical-ed25519", "ml-dsa"]
     assert summary["optional_algorithms"] == ["fn-dsa"]
-    assert summary["verified_algorithms"] == ["classical-ed25519", "ml-dsa", "fn-dsa"]
+    assert summary["verified_algorithms"] == expected_algorithms
+
+
+@pytest.mark.parametrize(
+    "supplied_algorithms",
+    [
+        ["ml-dsa", "classical-ed25519"],
+        ["fn-dsa", "ml-dsa", "classical-ed25519"],
+    ],
+)
+def test_v49h_signature_bundle_builder_emits_canonical_policy_order_without_mutating_input(supplied_algorithms):
+    supplied_signatures = [sig(algorithm) for algorithm in supplied_algorithms]
+    original_signatures = copy.deepcopy(supplied_signatures)
+
+    bundle = build_signature_bundle(policy_version="policy.v1", signatures=supplied_signatures)
+
+    assert [entry["algorithm"] for entry in bundle["signatures"]] == [
+        "classical-ed25519",
+        "ml-dsa",
+        *(["fn-dsa"] if "fn-dsa" in supplied_algorithms else []),
+    ]
+    assert supplied_signatures == original_signatures
+
+
+def test_v49h_signature_bundle_builder_preserves_empty_internal_shell_construction():
+    bundle = build_signature_bundle(policy_version="policy.v1", signatures=[])
+
+    assert bundle["signatures"] == []
+
+
+def test_v49h_signature_bundle_builder_rejects_non_object_entry():
+    with pytest.raises(ValueError, match="signature entry must be dict"):
+        build_signature_bundle(policy_version="policy.v1", signatures=["bad"])  # type: ignore[list-item]
+
+
+@pytest.mark.parametrize(
+    "algorithm_sequence",
+    [
+        ["ml-dsa", "classical-ed25519"],
+        ["fn-dsa", "classical-ed25519", "ml-dsa"],
+        ["fn-dsa", "ml-dsa", "classical-ed25519"],
+        ["classical-ed25519", "fn-dsa", "ml-dsa"],
+        ["ml-dsa", "classical-ed25519", "fn-dsa"],
+        ["ml-dsa", "fn-dsa", "classical-ed25519"],
+    ],
+)
+def test_v49h_signature_bundle_rejects_noncanonical_order_before_key_lookup_or_crypto(
+    algorithm_sequence, monkeypatch
+):
+    registry = load_key_registry(build_test_registry())
+    bundle = good_bundle()
+    bundle["signatures"] = [sig(algorithm) for algorithm in algorithm_sequence]
+    key_lookup_calls = []
+    verifier_calls = []
+
+    def tracking_find_key(*args, **kwargs):
+        key_lookup_calls.append((args, kwargs))
+        raise AssertionError("canonical-order failure reached key lookup")
+
+    def tracking_verifier(entry, key):
+        verifier_calls.append((entry, key))
+        return _test_verifier(entry, key)
+
+    monkeypatch.setattr("shield_orchestrator.v4.signature_bundle.find_key", tracking_find_key)
+    with pytest.raises(ValueError, match="canonical policy order"):
+        verify_signature_bundle(
+            bundle,
+            expected_signed_payload_hash=PAYLOAD_HASH,
+            expected_domain_tag=ORCHESTRATOR_RECEIPT_DOMAIN,
+            required_role="shield_orchestrator",
+            registry=registry,
+            verification_time="2026-06-21T00:00:00Z",
+            artifact_not_before="2026-06-21T00:00:00Z",
+            artifact_not_after="2026-06-21T00:05:00Z",
+            verifier=tracking_verifier,
+        )
+    assert key_lookup_calls == []
+    assert verifier_calls == []
 
 
 def test_v4_signature_bundle_rejects_bad_bundle_shapes():
