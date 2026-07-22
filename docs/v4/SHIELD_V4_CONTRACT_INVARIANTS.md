@@ -4,11 +4,12 @@ Author attribution: DarekDGB
 
 ## Status
 
-This document locks pre-implementation invariants for Shield v4 PQC work.
+This document locks the implemented Shield v4 PQC contract invariants.
 
 Baseline tag: `ecosystem-pre-v4-audit-lock`
 
-This is not a Shield v4 release and does not add cryptographic code.
+Shield v4 remains controlled pre-release work. Cryptographic evidence does not
+grant execution authority.
 
 ## Single Source of Truth Rule
 
@@ -16,7 +17,9 @@ For Shield v4, tests and contract documents define truth.
 
 If implementation code conflicts with these invariants, the implementation is wrong.
 
-If a future implementation cannot satisfy an invariant, the build must stop and the contract must be reviewed before any signing code is produced.
+If an implementation cannot satisfy an invariant, the build must stop and the
+contract must be reviewed before the affected signing or verification change
+is accepted.
 
 ## V4-INV-001 — Evidence Only
 
@@ -39,7 +42,7 @@ Existing v3 schemas remain intact:
 - `shield.verdict.v1`
 - `shield.receipt.v1`
 
-Planned v4 schemas are:
+Shield v4 schemas are:
 
 - `shield.verdict.v2`
 - `shield.receipt.v2`
@@ -238,6 +241,13 @@ Rules:
 - all required signatures sign the same `signed_payload_hash`
 - all required signatures are evaluated
 - no first-valid-wins behavior
+- signature order is derived from the active signature policy's
+  `allowed_algorithms`; no separate order source is authoritative
+- `policy.v1` uses exactly `classical-ed25519`, `ml-dsa`, then optional
+  `fn-dsa`; omitting `fn-dsa` does not change the required order
+- builders emit the canonical policy order without mutating caller input
+- verifiers reject any reordered signature array before per-signature key
+  selection, role/status/window checks, or cryptographic verification
 - duplicate algorithm entries fail closed
 - duplicate key entries fail closed
 - unknown algorithms fail closed
@@ -319,14 +329,15 @@ Test keys must be marked TEST-ONLY and must never be production keys.
 
 Verification must reject cheap failures before expensive signature work.
 
-Required order:
+Registry structure and version loading may occur before bundle verification.
+Across receipt and signature-bundle verification, the required relative order is:
 
 1. schema type and field set checks
 2. required field validation
 3. canonicalization validation
 4. hash validation
-5. signature policy validation
-6. key registry validation
+5. signature policy and canonical bundle-order validation
+6. per-signature key selection, role, status, and validity-window validation
 7. signature verification
 8. final handoff / AdamantineOS policy evaluation
 
@@ -394,6 +405,8 @@ No v4 release is locked until negative tests prove fail-closed behavior for:
 - revoked keys
 - expired keys
 - signature splicing
+- reordered signature arrays
+- optional FN-DSA inserted before or between required signatures
 - metadata authority injection
 - v3 downgrade where v4 is required
 
