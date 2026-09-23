@@ -30,9 +30,9 @@ AdamantineOS remains the final execution boundary.
 
 Shield v4 policy `policy.v1` uses these names:
 
-- `classical-ed25519` — required classical signature path;
-- `ml-dsa` — required PQC path; ML-DSA was formerly CRYSTALS-Dilithium;
-- `fn-dsa` — optional evidence path based on Falcon.
+- `classical-ed25519` - required classical signature path;
+- `ml-dsa` - required PQC path; ML-DSA was formerly CRYSTALS-Dilithium;
+- `fn-dsa` - optional evidence path based on Falcon.
 
 `fn-dsa` is not ML-DSA. It must never override failure of the required
 `classical-ed25519` or `ml-dsa` paths.
@@ -139,6 +139,64 @@ python scripts/assert_real_oqs_junit_not_skipped.py shield-v4-real-oqs-results.x
 ```
 
 A public live Falcon-1024 Orchestrator claim requires that dedicated workflow to finish green with `skipped == 0`, `failures == 0`, and `errors == 0` for the guarded report.
+
+### V4.10-I1 immutable source and retained-evidence pilot
+
+The Orchestrator pilot pins the matching upstream 0.16.0 release sources by
+full commit identity, rather than fetching a moving default branch:
+
+| Dependency | Release label | Immutable source commit |
+|---|---|---|
+| [liboqs](https://github.com/open-quantum-safe/liboqs/commit/5a1a854b0dc9f2141bdc771c555ee60c37950183) | 0.16.0 | `5a1a854b0dc9f2141bdc771c555ee60c37950183` |
+| [liboqs-python](https://github.com/open-quantum-safe/liboqs-python/commit/c6378cd5c8db74c0adf34ddcfbb96ee9c99f8061) | 0.16.0 | `c6378cd5c8db74c0adf34ddcfbb96ee9c99f8061` |
+
+The workflow checks each fetched HEAD, builds liboqs outside the repository,
+and installs into a dedicated temporary prefix. It builds the wrapper wheel
+from the pinned source with build isolation disabled, installs that wheel
+without index resolution, checks the installed wrapper bytes, and records
+the built wheel and loaded shared-library hashes. The expected shared library
+must load before the wrapper import; the wrapper must use that same handle.
+The job also checks versions and both required mechanisms before collecting
+the proof tests. A missing provider cannot silently become an auto-installed
+replacement for this proof.
+
+The existing two native test functions and runtime backend bytes are unchanged.
+The final report guard now uses this exact allow-list:
+
+```text
+python scripts/assert_real_oqs_junit_not_skipped.py artifacts/real-oqs/shield-v4-real-oqs-results.xml \
+  --min-tests 2 --exact-tests 2 \
+  --require-testcase "tests/test_v48g_real_oqs_mldsa_backend.py::test_v48g_real_oqs_mldsa65_orchestrator_backend_round_trip_and_negatives" \
+  --require-testcase "tests/test_v48h_e_real_oqs_falcon_backend.py::test_v48h_e_real_oqs_falcon1024_backend_round_trip_and_negatives"
+```
+
+The guard reconciles JUnit counters against actual testcase outcomes. Exact
+mode rejects extra, missing, duplicated, ambiguous, or conflicting node
+identities. Malformed, nested, missing, oversized, or inconsistent reports
+fail closed. Summary counters alone cannot hide a child failure, error, or
+skip. Legacy minimum-count invocation remains available, with the same
+counter/outcome consistency checks.
+
+Each run retains `shield-v4-real-oqs-<commit>-<attempt>` for 90 days. The artifact
+contains JUnit XML, collection output, pytest and guard logs, environment and
+source identities, source-archive digests, build/install logs, CMake cache,
+the wrapper wheel, the loaded native library digest, and self-excluding SHA256SUMS.
+Artifacts from a failed job are diagnostic evidence only. Release evidence
+requires the exact commit's entire workflow to succeed, the exact two nodes
+to pass with zero skips/failures/errors, and retained artifact/hash review.
+Download the artifact before retention expires and preserve it with the final
+proof pack; recording a hash alone does not preserve its bytes.
+
+The workflow's three Actions use full commit pins; the runner family is
+ubuntu-24.04 and CPython is 3.11.15. Direct Python build/test tool versions are
+selected explicitly, while transitive dependencies and operating-system build
+packages are recorded rather than fully locked. This is an immutable native
+source proof, not a bit-for-bit reproducible operating-system image claim.
+
+I1 remains a prepared pilot until its post-commit workflows, retained native
+artifact, and fresh ZIP are verified. The other six repositories require
+separate I follow-up. Test keys and this evidence do not prove production
+custody, FIPS validation, or final FIPS 206 support.
 
 ## Frozen real-signature input
 
