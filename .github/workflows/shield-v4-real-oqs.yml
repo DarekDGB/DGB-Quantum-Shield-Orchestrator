@@ -50,8 +50,6 @@ jobs:
       SHIELD_V4_REAL_OQS_FALCON: "1"
       LIBOQS_COMMIT: "5a1a854b0dc9f2141bdc771c555ee60c37950183"
       LIBOQS_PYTHON_COMMIT: "c6378cd5c8db74c0adf34ddcfbb96ee9c99f8061"
-      OQS_INSTALL_PATH: "${{ runner.temp }}/shield-oqs"
-      LD_LIBRARY_PATH: "${{ runner.temp }}/shield-oqs/lib"
       PYTHONHASHSEED: "0"
       TZ: UTC
       LC_ALL: C.UTF-8
@@ -68,8 +66,13 @@ jobs:
           python-version: "3.11.15"
           cache: pip
 
-      - name: Initialize evidence directory
-        run: mkdir -p artifacts/real-oqs
+      - name: Initialize evidence directory and native paths
+        run: |
+          set -euo pipefail
+          mkdir -p artifacts/real-oqs
+          printf '%s\n' \
+            "OQS_INSTALL_PATH=$RUNNER_TEMP/shield-oqs" \
+            "LD_LIBRARY_PATH=$RUNNER_TEMP/shield-oqs/lib" >> "$GITHUB_ENV"
 
       - name: Install system build dependencies
         run: |
