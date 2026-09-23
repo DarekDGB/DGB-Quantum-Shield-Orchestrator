@@ -12,6 +12,8 @@ on:
       - "tests/test_v48h_e_oqs_falcon_backend.py"
       - "tests/test_v48h_e_real_oqs_falcon_backend.py"
       - "scripts/assert_real_oqs_junit_not_skipped.py"
+      - "tests/test_v48h_e_real_oqs_junit_guard.py"
+      - "tests/test_v410i1_native_evidence_workflow_lock.py"
       - "docs/v4/SHIELD_V4_REAL_CRYPTO_BACKEND.md"
       - "docs/v4/SHIELD_V4_THREAT_MODEL.md"
       - "pyproject.toml"
@@ -24,6 +26,8 @@ on:
       - "tests/test_v48h_e_oqs_falcon_backend.py"
       - "tests/test_v48h_e_real_oqs_falcon_backend.py"
       - "scripts/assert_real_oqs_junit_not_skipped.py"
+      - "tests/test_v48h_e_real_oqs_junit_guard.py"
+      - "tests/test_v410i1_native_evidence_workflow_lock.py"
       - "docs/v4/SHIELD_V4_REAL_CRYPTO_BACKEND.md"
       - "docs/v4/SHIELD_V4_THREAT_MODEL.md"
       - "pyproject.toml"
@@ -34,57 +38,186 @@ permissions:
 
 jobs:
   real-oqs-mldsa-falcon1024:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+
+    defaults:
+      run:
+        shell: bash
 
     env:
       SHIELD_V4_REAL_OQS: "1"
       SHIELD_V4_REAL_OQS_FALCON: "1"
-      LD_LIBRARY_PATH: "/usr/local/lib"
+      LIBOQS_COMMIT: "5a1a854b0dc9f2141bdc771c555ee60c37950183"
+      LIBOQS_PYTHON_COMMIT: "c6378cd5c8db74c0adf34ddcfbb96ee9c99f8061"
+      OQS_INSTALL_PATH: "${{ runner.temp }}/shield-oqs"
+      LD_LIBRARY_PATH: "${{ runner.temp }}/shield-oqs/lib"
+      PYTHONHASHSEED: "0"
+      TZ: UTC
+      LC_ALL: C.UTF-8
 
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+        with:
+          persist-credentials: false
 
       - name: Set up Python
-        uses: actions/setup-python@v5
+        uses: actions/setup-python@42375524e23c412d93fb67b49958b491fce71c38 # v5.4.0
         with:
-          python-version: "3.11"
+          python-version: "3.11.15"
           cache: pip
+
+      - name: Initialize evidence directory
+        run: mkdir -p artifacts/real-oqs
 
       - name: Install system build dependencies
         run: |
           sudo apt-get update
           sudo apt-get install -y cmake ninja-build build-essential git libssl-dev
 
-      - name: Build and install liboqs
+      - name: Build and install immutable liboqs source
         run: |
-          git clone --depth 1 https://github.com/open-quantum-safe/liboqs.git
-          cmake -S liboqs -B liboqs/build -GNinja \
+          set -euo pipefail
+          native_source="$RUNNER_TEMP/shield-liboqs-source"
+          git init "$native_source"
+          git -C "$native_source" remote add origin https://github.com/open-quantum-safe/liboqs.git
+          git -C "$native_source" fetch --depth 1 origin "$LIBOQS_COMMIT"
+          git -C "$native_source" checkout --detach FETCH_HEAD
+          test "$(git -C "$native_source" rev-parse HEAD)" = "$LIBOQS_COMMIT"
+          git -C "$native_source" archive HEAD | sha256sum > artifacts/real-oqs/liboqs-source-archive.sha256
+          cmake -S "$native_source" -B "$native_source/build" -GNinja \
             -DBUILD_SHARED_LIBS=ON \
+            -DOQS_BUILD_ONLY_LIB=ON \
             -DCMAKE_BUILD_TYPE=Release \
-            -DCMAKE_INSTALL_PREFIX=/usr/local
-          cmake --build liboqs/build --parallel 2
-          sudo cmake --install liboqs/build
-          sudo ldconfig
+            -DCMAKE_INSTALL_LIBDIR=lib \
+            -DCMAKE_INSTALL_PREFIX="$OQS_INSTALL_PATH" \
+            2>&1 | tee artifacts/real-oqs/configure.log
+          cmake --build "$native_source/build" --parallel 2 2>&1 | tee artifacts/real-oqs/build.log
+          cmake --install "$native_source/build" 2>&1 | tee artifacts/real-oqs/install.log
+          cp "$native_source/build/CMakeCache.txt" artifacts/real-oqs/CMakeCache.txt
 
       - name: Install Python dependencies and liboqs-python
         run: |
-          python -m pip install --upgrade pip setuptools wheel
-          python -m pip install -e ".[test]"
-          python -m pip install pytest
-          python -m pip install "git+https://github.com/open-quantum-safe/liboqs-python.git"
+          set -euo pipefail
+          python -m pip install \
+            pip==25.2 setuptools==80.9.0 wheel==0.45.1 \
+            pytest==8.4.2 pytest-cov==7.0.0 hatchling==1.27.0
+          python -m pip install --no-build-isolation --no-deps -e .
+          wrapper_source="$RUNNER_TEMP/shield-liboqs-python-source"
+          git init "$wrapper_source"
+          git -C "$wrapper_source" remote add origin https://github.com/open-quantum-safe/liboqs-python.git
+          git -C "$wrapper_source" fetch --depth 1 origin "$LIBOQS_PYTHON_COMMIT"
+          git -C "$wrapper_source" checkout --detach FETCH_HEAD
+          test "$(git -C "$wrapper_source" rev-parse HEAD)" = "$LIBOQS_PYTHON_COMMIT"
+          git -C "$wrapper_source" archive HEAD | sha256sum > artifacts/real-oqs/liboqs-python-source-archive.sha256
+          python -m pip wheel --no-build-isolation --no-deps \
+            --wheel-dir artifacts/real-oqs "$wrapper_source"
+          python -m pip install --no-index --no-deps artifacts/real-oqs/liboqs_python-*.whl
+          python -m pip list --format=json > artifacts/real-oqs/python-packages.json
+
+      - name: Verify provider identity and record environment
+        run: |
+          python - <<'PY'
+          import ctypes
+          import hashlib
+          import importlib.metadata
+          import json
+          import os
+          import platform
+          from pathlib import Path
+          import subprocess
+
+          out = Path("artifacts/real-oqs")
+          native_path = Path(os.environ["OQS_INSTALL_PATH"]) / "lib/liboqs.so"
+          # Load the expected installed binary before oqs can attempt auto-installation.
+          loaded = ctypes.CDLL(str(native_path.resolve(strict=True)))
+          import oqs
+
+          if oqs.native()._handle != loaded._handle:
+              raise SystemExit("liboqs-python loaded a different native provider")
+          expected = {"python": "3.11.15", "pytest": "8.4.2", "liboqs": "0.16.0", "liboqs-python": "0.16.0"}
+          actual = {"python": platform.python_version(), "pytest": importlib.metadata.version("pytest"),
+                    "liboqs": oqs.oqs_version(), "liboqs-python": oqs.oqs_python_version()}
+          if actual != expected:
+              raise SystemExit(f"unexpected proof software: {actual!r}")
+          mechanisms = sorted(oqs.get_enabled_sig_mechanisms())
+          if not {"ML-DSA-65", "Falcon-1024"}.issubset(mechanisms):
+              raise SystemExit("required ML-DSA-65 or Falcon-1024 mechanism unavailable")
+          head = subprocess.check_output(["git", "rev-parse", "HEAD"], text=True).strip()
+          if head != os.environ["GITHUB_SHA"]:
+              raise SystemExit("checked-out commit does not match workflow commit")
+          wrapper = Path(os.environ["RUNNER_TEMP"]) / "shield-liboqs-python-source/oqs"
+          installed = Path(oqs.__file__).resolve().parent
+          for name in ("__init__.py", "oqs.py"):
+              if (installed / name).read_bytes() != (wrapper / name).read_bytes():
+                  raise SystemExit(f"installed wrapper differs from pinned source: {name}")
+          record = {
+              "schema": "shield.v410i.native_environment.v1", "author_attribution": "DarekDGB",
+              "repository": os.environ["GITHUB_REPOSITORY"], "commit": head,
+              "run_id": os.environ["GITHUB_RUN_ID"], "run_attempt": os.environ["GITHUB_RUN_ATTEMPT"],
+              "run_url": f"https://github.com/{os.environ['GITHUB_REPOSITORY']}/actions/runs/{os.environ['GITHUB_RUN_ID']}",
+              "versions": actual, "platform": platform.platform(), "mechanisms": mechanisms,
+              "liboqs_commit": os.environ["LIBOQS_COMMIT"],
+              "liboqs_python_commit": os.environ["LIBOQS_PYTHON_COMMIT"],
+              "native_library_sha256": hashlib.sha256(native_path.read_bytes()).hexdigest(),
+              "wrapper_module_sha256": hashlib.sha256((installed / "oqs.py").read_bytes()).hexdigest(),
+              "cmake": subprocess.check_output(["cmake", "--version"], text=True).splitlines()[0],
+              "compiler": subprocess.check_output(["cc", "--version"], text=True).splitlines()[0],
+          }
+          (out / "environment.json").write_text(json.dumps(record, indent=2, sort_keys=True) + "\n", encoding="utf-8")
+          print(json.dumps(record, sort_keys=True))
+          PY
+
+      - name: Record native proof collection
+        run: |
+          set -euo pipefail
+          python -m pytest --override-ini addopts='' --collect-only -q \
+            tests/test_v48g_real_oqs_mldsa_backend.py \
+            tests/test_v48h_e_real_oqs_falcon_backend.py \
+            | tee artifacts/real-oqs/collection.txt
 
       - name: Run gated real liboqs ML-DSA and Falcon-1024 proofs
         run: |
+          set -euo pipefail
           python -m pytest --override-ini addopts='' \
             tests/test_v48g_real_oqs_mldsa_backend.py \
             tests/test_v48h_e_real_oqs_falcon_backend.py \
-            -q --junitxml=shield-v4-real-oqs-results.xml
+            -vv --junitxml=artifacts/real-oqs/shield-v4-real-oqs-results.xml \
+            | tee artifacts/real-oqs/pytest.log
 
       - name: Assert real liboqs proof was not skipped
         if: always()
         run: |
-          python scripts/assert_real_oqs_junit_not_skipped.py shield-v4-real-oqs-results.xml \
+          set -euo pipefail
+          python scripts/assert_real_oqs_junit_not_skipped.py artifacts/real-oqs/shield-v4-real-oqs-results.xml \
             --min-tests 2 \
+            --exact-tests 2 \
             --require-testcase "tests/test_v48g_real_oqs_mldsa_backend.py::test_v48g_real_oqs_mldsa65_orchestrator_backend_round_trip_and_negatives" \
-            --require-testcase "tests/test_v48h_e_real_oqs_falcon_backend.py::test_v48h_e_real_oqs_falcon1024_backend_round_trip_and_negatives"
+            --require-testcase "tests/test_v48h_e_real_oqs_falcon_backend.py::test_v48h_e_real_oqs_falcon1024_backend_round_trip_and_negatives" \
+            | tee artifacts/real-oqs/guard.txt
+
+      - name: Hash retained proof files
+        if: always()
+        run: |
+          python - <<'PY'
+          import hashlib
+          from pathlib import Path
+
+          root = Path("artifacts/real-oqs")
+          files = sorted(p for p in root.iterdir() if p.is_file() and p.name != "SHA256SUMS")
+          if not files:
+              raise SystemExit("no native proof evidence produced")
+          lines = [f"{hashlib.sha256(p.read_bytes()).hexdigest()}  {p.name}\n" for p in files]
+          (root / "SHA256SUMS").write_text("".join(lines), encoding="utf-8")
+          print("".join(lines), end="")
+          PY
+
+      - name: Retain native proof evidence
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: shield-v4-real-oqs-${{ github.sha }}-${{ github.run_attempt }}
+          path: artifacts/real-oqs/
+          if-no-files-found: error
+          retention-days: 90
