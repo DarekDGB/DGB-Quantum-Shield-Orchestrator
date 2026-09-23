@@ -199,18 +199,30 @@ audit-sink failure.
 
 ## Known residual issues and remaining gates
 
-- liboqs and liboqs-python are fetched from floating default branches in the
-  current native workflow.
-- Existing standard, live, and native workflows retain mutable major action
-  tags; live component checkouts are not immutable.
+The C/D evidence records above remain historical and unchanged. D and the
+later E-H steps have since been verified in living roadmap R2.50. The I1
+Orchestrator pilot adds immutable native-source pins, an exact two-node guard,
+and retained artifacts as described in
+[the backend contract](SHIELD_V4_REAL_CRYPTO_BACKEND.md#v410-i1-immutable-source-and-retained-evidence-pilot).
+I1 itself still requires post-commit CI, artifact review, and a fresh ZIP.
+
+- The other six dedicated native workflows still fetch moving source branches;
+  the Orchestrator I1 candidate pins the two upstream 0.16.0 source commits.
+- Existing standard and live workflows retain mutable major action tags;
+  live component checkouts are not immutable. The I1 native workflow's three
+  Actions are pinned, but its OS build packages and all transitive Python
+  dependencies are not fully locked.
 - Standard CI enforces statement coverage, not branch coverage.
-- Not every transient JUnit/report file is uploaded as a retained artifact.
+- I1 configures native artifact retention; a final artifact identity can only
+  be recorded after the new workflow runs. Historical jobs still have no
+  retained JUnit, and standard/live artifact coverage remains separate.
 - Native evidence uses test keys and does not prove production custody or HSM
   assurance.
 - Provider cryptographic latency is outside the pinned structural benchmark.
 - FN-DSA/Falcon-1024 remains a draft profile and is not final FIPS 206 proof.
-- V4.10-D requires its own post-commit workflows and fresh-ZIP verification.
-- V4.10-E through V4.10-L remain separate controlled gates.
+- Any I1 commit requires refreshed Orchestrator H evidence; the other nine H
+  rows remain tied to their unchanged authenticated commits.
+- V4.10-I through V4.10-L remain separate controlled gates.
 
 No release tag may be created or moved without explicit DarekDGB approval at
 the final release-decision gate.
